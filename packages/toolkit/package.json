@@ -13,7 +13,7 @@
     "test:watch": "vitest"
   },
   "keywords": [],
-  "author": "",
+  "author": "Pleasurecruise, IvanHanloth",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.0",

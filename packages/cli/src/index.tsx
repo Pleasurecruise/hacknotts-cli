@@ -24,7 +24,11 @@ const isDirectExecution = (() => {
   }
 
   try {
-    return pathToFileURL(entry).href === import.meta.url
+    // Check if it's the direct file or a bin command (hacknotts)
+    return pathToFileURL(entry).href === import.meta.url ||
+           entry.includes('hacknotts') ||
+           entry.endsWith('index.mjs') ||
+           entry.endsWith('index.js')
   } catch {
     return false
   }

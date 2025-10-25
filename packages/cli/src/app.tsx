@@ -5,6 +5,7 @@ import {
   getInitializedProviders,
   getSupportedProviders
 } from '@cherrystudio/ai-core/provider'
+import { standardAsciiLogo } from './ui/AsciiArt'
 
 const REFRESH_INTERVAL_MS = 2000
 
@@ -55,7 +56,7 @@ export const App = () => {
   return (
     <Box flexDirection="column" gap={1}>
       <Box flexDirection="column">
-        <Text color="cyan">HackNotts AI CLI</Text>
+        <Text color="cyan">{standardAsciiLogo}</Text>
         <Text color="gray">Providers overview powered by @cherrystudio/ai-core</Text>
       </Box>
 
