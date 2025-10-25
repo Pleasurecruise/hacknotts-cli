@@ -1,0 +1,43 @@
+{
+  "name": "toolkit",
+  "version": "1.0.0",
+  "description": "mcp utils toolkit used for aiCore plugins system",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsc -w",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.0",
+    "ai": "^5.0.26"
+  },
+  "devDependencies": {
+    "tsdown": "^0.15.9",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.3"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "react-native": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  }
+}
