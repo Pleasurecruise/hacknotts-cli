@@ -10,8 +10,6 @@ import ChatDemo from './components/ChatDemo'
 import { createCommandRegistry } from './commands/CommandRegistry'
 import { createProviderCommand, createHelpCommand, createClearCommand } from './commands/builtInCommands'
 
-const REFRESH_INTERVAL_MS = 2000
-
 type SupportedProvider = ReturnType<typeof getSupportedProviders>[number]
 type ProviderStatus = {
   id: string
@@ -54,27 +52,11 @@ export const App = () => {
     return registry
   }, [])
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setInitialized(getInitializedProviders())
-      setLastUpdated(new Date().toISOString())
-    }, REFRESH_INTERVAL_MS)
-
-    return () => {
-      clearInterval(interval)
-    }
-  }, [])
-
   useInput((input: string, key: Key) => {
     // 只在 providers 视图处理这些快捷键
     if (viewMode === 'providers') {
       if (key.ctrl && input === 'c' || input.toLowerCase() === 'q') {
         exit()
-      }
-
-      if (input.toLowerCase() === 'r') {
-        setInitialized(getInitializedProviders())
-        setLastUpdated(new Date().toISOString())
       }
       
       // 按 C 返回 Chat 视图

@@ -1,4 +1,4 @@
-import { Box, Text, useInput, useStdout } from 'ink'
+import { Box, Text, useInput } from 'ink'
 import type { Key } from 'ink'
 import { useState, useEffect, useMemo } from 'react'
 import type { CommandRegistry } from '../commands'
@@ -26,8 +26,6 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
   const [showCommandList, setShowCommandList] = useState(false)
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0)
   const [filteredCommands, setFilteredCommands] = useState<any[]>([])
-  const { stdout } = useStdout()
-  const [visibleMessageCount, setVisibleMessageCount] = useState(10) // 默认显示最后10条消息
   
   // 随机选择一个 ASCII 字符画，只在组件首次加载时选择一次
   const randomAsciiLogo = useMemo(() => getRandomAsciiLogo(), [])
@@ -180,18 +178,18 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
   }, { isActive: true })
 
   // 根据终端高度动态调整可见消息数量
-  useEffect(() => {
-    if (stdout.rows) {
-      // 预留空间给标题、输入框和边框
-      const availableRows = stdout.rows - 10
-      const messagesPerRow = 4 // 每条消息大约占用的行数
-      const maxVisible = Math.max(5, Math.floor(availableRows / messagesPerRow))
-      setVisibleMessageCount(prev => {
-        // 只在值真正改变时才更新，避免不必要的重新渲染
-        return prev !== maxVisible ? maxVisible : prev
-      })
-    }
-  }, [stdout.rows])
+  // useEffect(() => {
+  //   if (stdout.rows) {
+  //     // 预留空间给标题、输入框和边框
+  //     const availableRows = stdout.rows - 10
+  //     const messagesPerRow = 4 // 每条消息大约占用的行数
+  //     const maxVisible = Math.max(5, Math.floor(availableRows / messagesPerRow))
+  //     setVisibleMessageCount(prev => {
+  //       // 只在值真正改变时才更新，避免不必要的重新渲染
+  //       return prev !== maxVisible ? maxVisible : prev
+  //     })
+  //   }
+  // }, [stdout.rows])
 
   // 渲染单条消息
   const renderMessage = (message: Message) => {
@@ -252,7 +250,6 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
         <Text color="gray" dimColor>{messages.length} messages</Text>
       </Box>
 
-      {/* Messages Area - 动态渲染最近的消息,避免使用Static导致终端累积 */}
       <Box flexDirection="column" marginY={1}>
         {messages.length === 0 ? (
           <Box flexDirection="column" paddingY={2} alignItems="center" justifyContent="center">
@@ -269,17 +266,8 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
           </Box>
         ) : (
           <Box flexDirection="column">
-            {/* 显示消息数量提示 */}
-            {messages.length > visibleMessageCount && (
-              <Box marginBottom={1}>
-                <Text color="gray" dimColor>
-                  ... {messages.length - visibleMessageCount} earlier messages hidden
-                </Text>
-              </Box>
-            )}
-            
-            {/* 只渲染最近的消息 */}
-            {messages.slice(-visibleMessageCount).map(renderMessage)}
+            {/* 渲染所有消息 */}
+            {messages.map(renderMessage)}
           </Box>
         )}
       </Box>
