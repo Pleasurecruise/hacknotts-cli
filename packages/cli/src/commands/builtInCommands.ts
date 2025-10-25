@@ -27,3 +27,28 @@ export const createClearCommand = (onExecute: () => void): Command => ({
     onExecute()
   }
 })
+
+export const createExitCommand = (onExecute: () => void, showGoodbyeMessage?: (message: string) => void): Command => ({
+  name: 'exit',
+  description: 'Exit the application',
+  aliases: ['quit', 'q'],
+  execute: () => {
+    // 显示告别消息
+    if (showGoodbyeMessage) {
+      const goodbyeMessages = [
+        '👋 Goodbye! Thanks for using HackNotts CLI!',
+        '✨ See you later! Have a great day!',
+        '🌟 Farewell! Come back soon!',
+        '💫 Bye! Happy coding!',
+        '🎉 Take care! See you next time!'
+      ]
+      const randomMessage = goodbyeMessages[Math.floor(Math.random() * goodbyeMessages.length)]
+      showGoodbyeMessage(randomMessage)
+    }
+    
+    // 延迟退出以显示消息
+    setTimeout(() => {
+      onExecute()
+    }, 800)
+  }
+})

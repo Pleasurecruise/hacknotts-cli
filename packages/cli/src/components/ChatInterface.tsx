@@ -14,10 +14,11 @@ export type Message = {
 }
 
 type ChatInterfaceProps = {
-  onSendMessage: (message: string) => void
+  onSendMessage: (message: string, showGoodbyeMessage?: string) => void
   messages: Message[]
   isLoading?: boolean
   commandRegistry?: CommandRegistry
+  onShowGoodbyeMessage?: (message: string) => void
 }
 
 // 提取 MessageItem 组件并使用 memo 优化
@@ -53,7 +54,7 @@ const MessageItem = memo(({ message }: { message: Message }) => {
 
 MessageItem.displayName = 'MessageItem'
 
-export const ChatInterface = ({ onSendMessage, messages, isLoading = false, commandRegistry }: ChatInterfaceProps) => {
+export const ChatInterface = ({ onSendMessage, messages, isLoading = false, commandRegistry, onShowGoodbyeMessage }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState('')
   const [cursorPosition, setCursorPosition] = useState(0)
   const [showCommandList, setShowCommandList] = useState(false)
@@ -176,24 +177,53 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
       if (inputValue.trim() && !isLoading) {
         const trimmedInput = inputValue.trim()
         
-        // 如果显示命令列表且有选中的命令，执行选中的命令
-        if (showCommandList && filteredCommands.length > 0) {
-          const selectedCommand = filteredCommands[selectedCommandIndex]
-          if (selectedCommand && trimmedInput === '/' || trimmedInput.slice(1) !== selectedCommand.name) {
-            // 如果只是输入 / 或者搜索中，直接补全并等待参数
-            const commandInput = `/${selectedCommand.name} `
-            setInputValue(commandInput)
-            setCursorPosition(commandInput.length)
-            setShowCommandList(false)
-            return
-          }
-        }
-        
         // 检查是否是命令
         if (trimmedInput.startsWith('/') && commandRegistry) {
-          const executed = commandRegistry.executeCommand(trimmedInput)
-          if (!executed) {
-            // 命令不存在,显示错误消息
+          // 移除开头的 /
+          const commandText = trimmedInput.slice(1).toLowerCase()
+          
+          // 如果输入可以匹配到命令（包括别名），直接执行
+          const command = commandRegistry.getCommand(commandText.split(/\s+/)[0])
+          if (command) {
+            // 创建一个包装的执行函数，用于捕获告别消息
+            let goodbyeMessage: string | undefined
+            
+            // 临时替换 exit 命令的回调来捕获告别消息
+            if (command.name === 'exit' && onShowGoodbyeMessage) {
+              const originalExecute = command.execute
+              command.execute = (args) => {
+                // 调用原始执行，但拦截告别消息
+                const showGoodbye = (msg: string) => {
+                  goodbyeMessage = msg
+                  onSendMessage('', msg) // 通过 onSendMessage 显示告别消息
+                }
+                
+                // 重新创建带告别消息的命令
+                const exitCommand = commandRegistry.getCommand('exit')
+                if (exitCommand) {
+                  // 直接在这里生成并显示告别消息
+                  const goodbyeMessages = [
+                    '👋 Goodbye! Thanks for using HackNotts CLI!',
+                    '✨ See you later! Have a great day!',
+                    '🌟 Farewell! Come back soon!',
+                    '💫 Bye! Happy coding!',
+                    '🎉 Take care! See you next time!'
+                  ]
+                  const randomMessage = goodbyeMessages[Math.floor(Math.random() * goodbyeMessages.length)]
+                  onSendMessage('', randomMessage)
+                }
+                
+                // 调用原始执行
+                originalExecute(args || [])
+              }
+            }
+            
+            commandRegistry.executeCommand(trimmedInput)
+          } else if (showCommandList && filteredCommands.length > 0) {
+            // 如果命令不存在但有匹配的建议，不执行，只显示错误
+            onSendMessage(trimmedInput)
+          } else {
+            // 命令不存在
             onSendMessage(trimmedInput)
           }
         } else {
@@ -214,7 +244,7 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
       setInputValue(newValue)
       setCursorPosition(cursorPosition + 1)
     }
-  }, [inputValue, cursorPosition, showCommandList, filteredCommands, selectedCommandIndex, isLoading, commandRegistry, onSendMessage])
+  }, [inputValue, cursorPosition, showCommandList, filteredCommands, selectedCommandIndex, isLoading, commandRegistry, onSendMessage, onShowGoodbyeMessage])
 
   useInput(handleInput, { isActive: true })
 

@@ -6,9 +6,10 @@ import { initializeAIProvider, streamAIChat, type AIConfig } from '../services/a
 
 type ChatDemoProps = {
   commandRegistry?: CommandRegistry
+  onShowGoodbyeMessage?: (message: string) => void
 }
 
-export const ChatDemo = ({ commandRegistry }: ChatDemoProps) => {
+export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage }: ChatDemoProps) => {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [aiConfig, setAiConfig] = useState<AIConfig | null>(null)
@@ -114,7 +115,19 @@ export const ChatDemo = ({ commandRegistry }: ChatDemoProps) => {
     setIsLoading(false)
   }, [aiConfig])
 
-  const handleSendMessage = useCallback((content: string) => {
+  const handleSendMessage = useCallback((content: string, showGoodbyeMessage?: string) => {
+    // 如果有告别消息，显示它
+    if (showGoodbyeMessage) {
+      const goodbyeMsg: Message = {
+        id: Date.now().toString(),
+        role: 'system',
+        content: showGoodbyeMessage,
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, goodbyeMsg])
+      return
+    }
+    
     // 检查是否是未知命令
     if (content.startsWith('/')) {
       // 特殊处理 clear 命令
@@ -167,6 +180,7 @@ export const ChatDemo = ({ commandRegistry }: ChatDemoProps) => {
         onSendMessage={handleSendMessage}
         isLoading={isLoading}
         commandRegistry={commandRegistry}
+        onShowGoodbyeMessage={onShowGoodbyeMessage}
       />
     </Box>
   )

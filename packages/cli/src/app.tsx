@@ -5,10 +5,10 @@ import {
   getInitializedProviders,
   getSupportedProviders
 } from '@cherrystudio/ai-core/provider'
-import { standardAsciiLogo } from './ui/AsciiArt'
+import { getRandomAsciiLogo } from './ui/AsciiArt'
 import ChatDemo from './components/ChatDemo'
 import { createCommandRegistry } from './commands/CommandRegistry'
-import { createProviderCommand, createHelpCommand, createClearCommand } from './commands/builtInCommands'
+import { createProviderCommand, createHelpCommand, createClearCommand, createExitCommand } from './commands/builtInCommands'
 
 type SupportedProvider = ReturnType<typeof getSupportedProviders>[number]
 type ProviderStatus = {
@@ -25,6 +25,14 @@ export const App = () => {
   const [initialized, setInitialized] = useState<string[]>(() => getInitializedProviders())
   const [lastUpdated, setLastUpdated] = useState(() => new Date().toISOString())
   const [viewMode, setViewMode] = useState<ViewMode>('chat')
+  
+  // 随机选择一个 ASCII 字符画，只在组件首次加载时选择一次
+  const randomAsciiLogo = useMemo(() => getRandomAsciiLogo(), [])
+  
+  // 告别消息回调
+  const handleShowGoodbyeMessage = (message: string) => {
+    // 在这里可以显示告别消息，现在通过 ChatDemo 传递
+  }
 
   // 创建命令注册表
   const commandRegistry = useMemo(() => {
@@ -49,8 +57,15 @@ export const App = () => {
       })
     )
     
+    // 注册 exit 命令
+    registry.registerCommand(
+      createExitCommand(() => {
+        exit()
+      }, handleShowGoodbyeMessage)
+    )
+    
     return registry
-  }, [])
+  }, [exit])
 
   useInput((input: string, key: Key) => {
     // 只在 providers 视图处理这些快捷键
@@ -88,7 +103,7 @@ export const App = () => {
         <Box paddingX={1} paddingTop={1}>
           <Text color="gray" dimColor>Type /provider to view providers | ESC to exit</Text>
         </Box>
-        <ChatDemo commandRegistry={commandRegistry} />
+        <ChatDemo commandRegistry={commandRegistry} onShowGoodbyeMessage={handleShowGoodbyeMessage} />
       </Box>
     )
   }
@@ -98,7 +113,7 @@ export const App = () => {
     <Box flexDirection="column" gap={1} padding={1}>
       {/* Header Section */}
       <Box flexDirection="column">
-        <Text color="cyan">{standardAsciiLogo}</Text>
+        <Text color="cyan">{randomAsciiLogo}</Text>
         <Text color="gray">Providers overview powered by @cherrystudio/ai-core</Text>
       </Box>
 
