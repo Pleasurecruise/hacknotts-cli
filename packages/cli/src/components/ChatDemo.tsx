@@ -70,23 +70,35 @@ export const ChatDemo = ({ commandRegistry }: ChatDemoProps) => {
       // 使用真实的 AI 流式响应
       for await (const chunk of streamAIChat(conversationHistory, aiConfig)) {
         setMessages((prev) => {
-          const updated = [...prev]
-          const lastMessage = updated[updated.length - 1]
+          const lastMessageIndex = prev.length - 1
+          const lastMessage = prev[lastMessageIndex]
           if (lastMessage && lastMessage.id === aiMessageId) {
-            lastMessage.content += chunk
+            return [
+              ...prev.slice(0, lastMessageIndex),
+              {
+                ...lastMessage,
+                content: lastMessage.content + chunk
+              }
+            ]
           }
-          return updated
+          return prev
         })
       }
 
       // 流式完成，更新状态
       setMessages((prev) => {
-        const updated = [...prev]
-        const lastMessage = updated[updated.length - 1]
+        const lastMessageIndex = prev.length - 1
+        const lastMessage = prev[lastMessageIndex]
         if (lastMessage && lastMessage.id === aiMessageId) {
-          lastMessage.isStreaming = false
+          return [
+            ...prev.slice(0, lastMessageIndex),
+            {
+              ...lastMessage,
+              isStreaming: false
+            }
+          ]
         }
-        return updated
+        return prev
       })
     } catch (error) {
       // 处理错误
