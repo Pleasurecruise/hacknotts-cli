@@ -2,9 +2,7 @@ import { defineConfig } from 'tsdown'
 
 export default defineConfig({
     entry: {
-        index: 'src/index.ts',
-        'built-in/plugins/index': 'src/core/plugins/built-in/index.ts',
-        'provider/index': 'src/core/providers/index.ts'
+        index: 'src/index.tsx'
     },
     outDir: 'dist',
     format: ['esm', 'cjs'],

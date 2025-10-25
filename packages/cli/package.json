@@ -15,7 +15,17 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
+  "bin": {
+    "hacknotts": "./dist/index.js"
+  },
+  "dependencies": {
+    "@cherrystudio/ai-core": "^1.0.1",
+    "ink": "^4.4.1",
+    "react": "^18.3.1"
+  },
   "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/react": "^18.3.12",
     "tsdown": "^0.15.9",
     "typescript": "^5.9.3",
     "vitest": "^4.0.3"
