@@ -10,7 +10,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown && npm install -g . --force",
     "dev": "tsc -w",
     "clean": "rm -rf dist",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --cache",

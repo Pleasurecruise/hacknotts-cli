@@ -3,7 +3,7 @@ import type { Key } from 'ink'
 import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import type { CommandRegistry } from '../commands'
 import CommandList from './CommandList'
-import { getRandomAsciiLogo } from '../ui/AsciiArt'
+import { getRandomAsciiLogo, getRandomQuote, decorativeBanner } from '../ui/AsciiArt'
 
 export type Message = {
   id: string
@@ -61,8 +61,9 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0)
   const [filteredCommands, setFilteredCommands] = useState<any[]>([])
   
-  // 随机选择一个 ASCII 字符画，只在组件首次加载时选择一次
+  // 随机选择一个 ASCII 字符画和名言，只在组件首次加载时选择一次
   const randomAsciiLogo = useMemo(() => getRandomAsciiLogo(), [])
+  const randomQuote = useMemo(() => getRandomQuote(), [])
 
   // 使用 useCallback 优化回调函数
   const handleCloseCommandList = useCallback(() => {
@@ -201,13 +202,16 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
                 // 重新创建带告别消息的命令
                 const exitCommand = commandRegistry.getCommand('exit')
                 if (exitCommand) {
-                  // 直接在这里生成并显示告别消息
+                  // 直接在这里生成并显示告别消息 - HackNotts themed!
                   const goodbyeMessages = [
-                    '👋 Goodbye! Thanks for using HackNotts CLI!',
-                    '✨ See you later! Have a great day!',
-                    '🌟 Farewell! Come back soon!',
-                    '💫 Bye! Happy coding!',
-                    '🎉 Take care! See you next time!'
+                    '👋 Goodbye! Thanks for using HackNotts CLI! Keep hacking with playful cleverness!',
+                    '✨ See you at HackNotts 2025! Build something amazing!',
+                    '🌟 Farewell, hacker! May your code compile and your ideas flourish!',
+                    '💫 Until next time! Remember: every expert was once a beginner.',
+                    '🎉 Happy coding! See you at the University of Nottingham!',
+                    '🚀 Off you go! Time to turn those ideas into reality!',
+                    '🏆 Keep learning, keep building! HackNotts believes in you!',
+                    '💡 Goodbye! Don\'t forget: code is poetry, and you\'re the poet!'
                   ]
                   const randomMessage = goodbyeMessages[Math.floor(Math.random() * goodbyeMessages.length)]
                   onSendMessage('', randomMessage)
@@ -271,25 +275,20 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
 
   return (
     <Box flexDirection="column">
-      {/* Header */}
-      <Box borderStyle="round" borderColor="cyan" paddingX={1}>
-        <Text bold color="cyan">💬 Chat Interface</Text>
-        <Box flexGrow={1} />
-        <Text color="gray" dimColor>{messages.length} messages</Text>
-      </Box>
-
       <Box flexDirection="column" marginY={1}>
         {messages.length === 0 ? (
-          <Box flexDirection="column" paddingY={2} alignItems="center" justifyContent="center">
-            {/* 居中显示随机 ASCII 字符画 */}
-            <Box marginBottom={2}>
+          <Box flexDirection="column" paddingY={1} paddingX={2}>
+            {/* ASCII 字符画 */}
+            <Box marginBottom={1}>
               <Text color="cyan">{randomAsciiLogo}</Text>
             </Box>
-            {/* 提示信息 */}
-            <Box flexDirection="column" alignItems="center">
-              <Text color="gray" dimColor>Start typing to begin your conversation!</Text>
-              <Text color="gray" dimColor>Type / to see available commands</Text>
-              <Text color="gray" dimColor>Press Enter to send message</Text>
+            {/* 装饰性横幅 */}
+            <Box marginBottom={1}>
+              <Text color="magenta">{decorativeBanner}</Text>
+            </Box>
+            {/* 励志名言 */}
+            <Box marginBottom={1}>
+              <Text color="yellow">{randomQuote}</Text>
             </Box>
           </Box>
         ) : (

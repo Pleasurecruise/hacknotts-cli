@@ -7,14 +7,20 @@ import { initializeAIProvider, streamAIChat, type AIConfig } from '../services/a
 type ChatDemoProps = {
   commandRegistry?: CommandRegistry
   onShowGoodbyeMessage?: (message: string) => void
+  onHasMessages?: (hasMessages: boolean) => void
 }
 
-export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage }: ChatDemoProps) => {
+export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages }: ChatDemoProps) => {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [aiConfig, setAiConfig] = useState<AIConfig | null>(null)
   const { exit } = useApp()
   const initRef = useRef(false) // 防止重复初始化
+
+  // 通知父组件消息状态变化
+  useEffect(() => {
+    onHasMessages?.(messages.length > 0)
+  }, [messages.length, onHasMessages])
 
   // 初始化 AI Provider
   useEffect(() => {
