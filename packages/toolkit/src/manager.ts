@@ -3,12 +3,19 @@
  * Manages built-in MCP tools and conversion to AI SDK format
  */
 
-import type { ToolSet } from 'ai'
-import { tool as createTool } from 'ai'
-import { z } from 'zod'
-import type { Tool } from '@modelcontextprotocol/sdk/types.js'
-import type { McpPluginConfig } from './types'
-import { fetchToolDefinition, executeFetchTool } from './tools/fetch'
+import type {ToolSet} from 'ai'
+import {tool as createTool} from 'ai'
+import {z} from 'zod'
+import type {Tool} from '@modelcontextprotocol/sdk/types.js'
+import type {McpPluginConfig} from './types'
+import {executeFetchTool, fetchToolDefinition} from './tools/fetch'
+import {executeFilesystemTool, filesystemToolDefinition} from './tools/filesystem'
+import {executeMemoryTool, memoryToolDefinition} from './tools/memory'
+import {executeTimeTool, timeToolDefinition} from './tools/time'
+import {
+  executeSequentialThinkingTool,
+  sequentialThinkingToolDefinition
+} from './tools/sequentialthinking'
 
 /**
  * Built-in tool definition with executor
@@ -46,6 +53,30 @@ export class McpManager {
       execute: executeFetchTool
     })
 
+    // Register built-in filesystem tool
+    this.registerTool('filesystem', {
+      definition: filesystemToolDefinition,
+      execute: executeFilesystemTool
+    })
+
+    // Register built-in memory tool
+    this.registerTool('memory', {
+      definition: memoryToolDefinition,
+      execute: executeMemoryTool
+    })
+
+    // Register built-in time tool
+    this.registerTool('time', {
+      definition: timeToolDefinition,
+      execute: executeTimeTool
+    })
+
+    // Register built-in sequential thinking tool
+    this.registerTool('sequentialthinking', {
+      definition: sequentialThinkingToolDefinition,
+      execute: executeSequentialThinkingTool
+    })
+
     if (this.config.verbose) {
       console.log(`[MCP] Initialized ${this.tools.size} built-in tools`)
     }
@@ -76,13 +107,12 @@ export class McpManager {
       const zodSchema = this.jsonSchemaToZod(definition.inputSchema)
 
       // Create AI SDK tool
-      toolSet[toolKey] = createTool({
+      const aiTool = createTool({
         description: definition.description || '',
         parameters: zodSchema,
         execute: async (args: any) => {
           try {
-            const result = await execute(args, config)
-            return result
+            return await execute(args, config)
           } catch (error) {
             if (this.config.verbose) {
               console.error(`[MCP] Tool execution failed: ${toolKey}`, error)
@@ -91,60 +121,118 @@ export class McpManager {
           }
         }
       })
+
+      // Add inputSchema for prompt-based tool use plugins
+      // This is needed by toolUsePlugin to generate system prompts
+      ;(aiTool as any).inputSchema = definition.inputSchema
+
+      toolSet[toolKey] = aiTool
     }
 
     return toolSet
   }
 
   /**
-   * Convert JSON Schema to Zod schema (simplified version)
+   * Convert JSON Schema to Zod schema (enhanced version)
    */
   private jsonSchemaToZod(schema: any): z.ZodType<any> {
     if (!schema || typeof schema !== 'object') {
       return z.any()
     }
 
-    const { type, properties, required = [] } = schema
+    const {
+      type,
+      properties,
+      required = [],
+      items,
+      minimum,
+      maximum,
+      minItems,
+      enum: enumValues,
+      additionalProperties
+    } = schema
 
-    if (type === 'object' && properties) {
+    // Handle object type (or objects without explicit type but with properties)
+    if (type === 'object' || (!type && properties)) {
       const shape: Record<string, z.ZodType<any>> = {}
 
-      for (const [key, propSchema] of Object.entries(properties as Record<string, any>)) {
-        let zodType = this.jsonSchemaToZod(propSchema)
+      if (properties && typeof properties === 'object') {
+        for (const [key, propSchema] of Object.entries(properties as Record<string, any>)) {
+          let zodType = this.jsonSchemaToZod(propSchema)
 
-        // Make optional if not in required array
-        if (!required.includes(key)) {
-          zodType = zodType.optional()
+          // Make optional if not in required array
+          if (!required.includes(key)) {
+            zodType = zodType.optional()
+          }
+
+          if (propSchema.description) {
+            zodType = zodType.describe(propSchema.description)
+          }
+
+          shape[key] = zodType
         }
-
-        if (propSchema.description) {
-          zodType = zodType.describe(propSchema.description)
-        }
-
-        shape[key] = zodType
       }
 
-      return z.object(shape)
+      let zodObject = z.object(shape)
+
+      if (additionalProperties !== undefined) {
+        if (additionalProperties === true) {
+          zodObject = zodObject.catchall(z.any())
+        } else if (additionalProperties === false) {
+          zodObject = zodObject.catchall(z.never())
+        } else {
+          zodObject = zodObject.catchall(this.jsonSchemaToZod(additionalProperties))
+        }
+      }
+
+      return zodObject
     }
 
+    // Handle string type
     if (type === 'string') {
-      if (schema.enum) {
-        return z.enum(schema.enum)
+      if (enumValues && Array.isArray(enumValues) && enumValues.length > 0) {
+        return z.enum(enumValues as [string, ...string[]])
       }
       return z.string()
     }
 
-    if (type === 'number' || type === 'integer') {
-      return z.number()
+    // Handle number type
+    if (type === 'number') {
+      let zodNumber = z.number()
+      if (typeof minimum === 'number') {
+        zodNumber = zodNumber.min(minimum)
+      }
+      if (typeof maximum === 'number') {
+        zodNumber = zodNumber.max(maximum)
+      }
+      return zodNumber
     }
 
+    // Handle integer type
+    if (type === 'integer') {
+      let zodNumber = z.number().int()
+      if (typeof minimum === 'number') {
+        zodNumber = zodNumber.min(minimum)
+      }
+      if (typeof maximum === 'number') {
+        zodNumber = zodNumber.max(maximum)
+      }
+      return zodNumber
+    }
+
+    // Handle boolean type
     if (type === 'boolean') {
       return z.boolean()
     }
 
+    // Handle array type
     if (type === 'array') {
-      const itemSchema = schema.items ? this.jsonSchemaToZod(schema.items) : z.any()
-      return z.array(itemSchema)
+      const itemSchema = items ? this.jsonSchemaToZod(items) : z.any()
+      let zodArray = z.array(itemSchema)
+      if (typeof minItems === 'number') {
+        zodArray = zodArray.min(minItems)
+      }
+      return zodArray
     }
 
     return z.any()

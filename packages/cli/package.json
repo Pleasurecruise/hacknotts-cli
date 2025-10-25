@@ -2,8 +2,8 @@
   "name": "cli",
   "version": "1.0.0",
   "description": "interactive CLI for aiCore plugins system",
+  "type": "module",
   "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsdown",
@@ -33,7 +33,7 @@
     "node": ">=22.12.0"
   },
   "bin": {
-    "hacknotts": "./dist/index.mjs"
+    "hacknotts": "./dist/index.js"
   },
   "files": [
     "dist"
@@ -41,9 +41,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "react-native": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
+      "import": "./dist/index.js",
       "default": "./dist/index.js"
     }
   }

@@ -17,7 +17,7 @@ export interface FetchToolConfig {
 export const fetchToolDefinition: Tool = {
   name: 'fetch',
   description:
-    'Fetches a URL from the internet and returns its content. Can handle HTML, JSON, and plain text responses.',
+    'Use this tool to fetch content from the internet. Call this when the user asks for current information, news, web pages, API data, or any online content. Supports fetching HTML, JSON, and plain text from any HTTP/HTTPS URL.',
   inputSchema: {
     type: 'object',
     properties: {
