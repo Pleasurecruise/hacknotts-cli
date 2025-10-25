@@ -2,11 +2,31 @@ import { defineConfig } from 'tsdown'
 
 export default defineConfig({
     entry: {
-        index: 'src/index.ts'
+        // CLI entry (main package)
+        'cli': 'packages/cli/src/index.tsx',
+        // aiCore entries
+        'aiCore/index': 'packages/aiCore/src/index.ts',
+        'aiCore/built-in/plugins/index': 'packages/aiCore/src/core/plugins/built-in/index.ts',
+        'aiCore/provider/index': 'packages/aiCore/src/core/providers/index.ts',
+        // toolkit entry
+        'toolkit/index': 'packages/toolkit/src/index.ts'
     },
     outDir: 'dist',
-    format: ['esm', 'cjs'],
+    format: ['esm'],
     clean: true,
     dts: true,
-    tsconfig: 'tsconfig.json'
+    platform: 'node',
+    external: [
+        'yoga-wasm-web',
+        'react-devtools-core',
+        'ink',
+        'react',
+        /^@ai-sdk\//,
+        /^@openrouter\//,
+        /^@cherrystudio\//,
+        /^@modelcontextprotocol\//,
+        'ai',
+        'zod',
+        'dotenv'
+    ]
 })

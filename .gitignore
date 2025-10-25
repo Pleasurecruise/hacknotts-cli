@@ -1,4 +1,8 @@
 .idea/
+.vscode/
+.claude/
+.codex/
+.qwen/
 node_modules/
 dist/
 .yarn/
