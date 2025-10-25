@@ -23,7 +23,8 @@ export default defineConfig({
         'react',
         /^@ai-sdk\//,
         /^@openrouter\//,
-        /^@cherrystudio\//,
+        // Note: @cherrystudio packages are workspace internal, should be bundled
+        // Only external for library builds, not for CLI
         /^@modelcontextprotocol\//,
         'ai',
         'zod',
