@@ -3,9 +3,10 @@
  * 使用 @cherrystudio/ai-core 进行 AI 交互
  */
 import { config } from 'dotenv'
-import { createExecutor } from '@cherrystudio/ai-core'
+import { createExecutor, createPromptToolUsePlugin } from '@cherrystudio/ai-core'
 import { createAndRegisterProvider } from '@cherrystudio/ai-core/provider'
 import type { ProviderId } from '@cherrystudio/ai-core/provider'
+import { createMcpPlugin } from 'toolkit'
 
 // 加载环境变量（从 .env 文件或系统环境变量）
 config({ path: '.env' })
@@ -152,6 +153,17 @@ export async function* streamAIChat(
   aiConfig: AIConfig
 ): AsyncGenerator<string, void, unknown> {
   try {
+    // 创建 MCP 插件（内置 fetch 工具）
+    const mcpPlugin = createMcpPlugin({
+      verbose: false,
+      toolPrefix: false
+    })
+
+    // 创建工具调用处理插件
+    const toolUsePlugin = createPromptToolUsePlugin({
+      verbose: false
+    })
+
     // 创建执行器
     const executor = createExecutor(
       aiConfig.providerId,
@@ -159,7 +171,7 @@ export async function* streamAIChat(
         apiKey: aiConfig.apiKey,
         ...(aiConfig.baseURL && { baseURL: aiConfig.baseURL })
       } as any,
-      [] // plugins
+      [mcpPlugin, toolUsePlugin] // 添加插件：MCP工具 + 工具调用处理
     )
 
     // 调用流式文本生成
@@ -189,13 +201,24 @@ export async function generateAIResponse(
   aiConfig: AIConfig
 ): Promise<string> {
   try {
+    // 创建 MCP 插件（内置 fetch 工具）
+    const mcpPlugin = createMcpPlugin({
+      verbose: false,
+      toolPrefix: false
+    })
+
+    // 创建工具调用处理插件
+    const toolUsePlugin = createPromptToolUsePlugin({
+      verbose: false
+    })
+
     const executor = createExecutor(
       aiConfig.providerId,
       {
         apiKey: aiConfig.apiKey,
         ...(aiConfig.baseURL && { baseURL: aiConfig.baseURL })
       } as any,
-      []
+      [mcpPlugin, toolUsePlugin]
     )
 
     const result = await executor.generateText({

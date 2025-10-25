@@ -21,7 +21,8 @@ export { globalModelResolver as modelResolver } from './core/models'
 // ==================== 插件系统 ====================
 export type { AiPlugin, AiRequestContext, HookResult, PluginManagerConfig } from './core/plugins'
 export { createContext, definePlugin, PluginManager } from './core/plugins'
-// export { createPromptToolUsePlugin, webSearchPlugin } from './core/plugins/built-in'
+export { createPromptToolUsePlugin, webSearchPlugin } from './core/plugins/built-in'
+export type { PromptToolUseConfig } from './core/plugins/built-in'
 export { PluginEngine } from './core/runtime/pluginEngine'
 
 // ==================== AI SDK 常用类型导出 ====================

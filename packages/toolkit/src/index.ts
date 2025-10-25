@@ -3,6 +3,15 @@
  * @packageDocumentation
  */
 
-// TODO: Add toolkit implementations here
+// Core manager
+export { McpManager, createMcpManager } from './manager'
 
-export {}
+// Plugin integration
+export { createMcpPlugin } from './plugin'
+
+// Types
+export type { McpPluginConfig, McpToolInfo } from './types'
+
+// Built-in tools
+export { fetchToolDefinition, executeFetchTool } from './tools/fetch'
+export type { FetchToolConfig } from './tools/fetch'
