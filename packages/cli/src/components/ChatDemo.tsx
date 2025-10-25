@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Box } from 'ink'
+import { Box, useInput } from 'ink'
+import type { Key } from 'ink'
 import ChatInterface, { type Message } from './ChatInterface'
 import type { CommandRegistry } from '../commands/types'
 import { initializeAIProvider, streamAIChat, type AIConfig } from '../services/aiService'
 import { createMessage, isCommand, parseCommand } from '../utils/helpers'
+import LoadingSpinner from './LoadingSpinner'
 
 type ChatDemoProps = {
   commandRegistry?: CommandRegistry
@@ -15,16 +17,35 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [aiConfig, setAiConfig] = useState<AIConfig | null>(null)
-  const initRef = useRef(false) // 防止重复初始化
+  const initRef = useRef(false) // Prevent duplicate initialization
+  const abortControllerRef = useRef<AbortController | null>(null) // For request cancellation
 
-  // 通知父组件消息状态变化
+  // Notify parent component of message state changes
   useEffect(() => {
     onHasMessages?.(messages.length > 0)
   }, [messages.length, onHasMessages])
 
-  // 初始化 AI Provider
+  // Listen for Ctrl+C to cancel request
+  useInput((input: string, key: Key) => {
+    if (key.ctrl && input === 'c' && isLoading) {
+      // Cancel current AI request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
+      }
+      setIsLoading(false)
+      
+      // Remove streaming message
+      setMessages((prev) => {
+        const filtered = prev.filter(msg => !msg.isStreaming)
+        return [...filtered, createMessage('system', 'Request cancelled')]
+      })
+    }
+  }, { isActive: isLoading })
+
+  // Initialize AI Provider
   useEffect(() => {
-    // 防止严格模式下的重复初始化
+    // Prevent duplicate initialization in strict mode
     if (initRef.current) return
     initRef.current = true
 
@@ -33,7 +54,7 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
       if (config) {
         setAiConfig(config)
       } else {
-        // 如果初始化失败，显示错误消息
+        // Show error message if initialization fails
         setMessages([createMessage('system', 
           'Failed to initialize AI provider. Please check your environment variables (.env file) and make sure you have set a valid API key.'
         )])
@@ -42,7 +63,7 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
     init()
   }, [])
 
-  // 真实 AI 流式响应
+  // Real AI streaming response
   const streamAIResponse = useCallback(async (conversationHistory: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>) => {
     if (!aiConfig) {
       setMessages((prev) => [...prev, createMessage('system', 
@@ -52,14 +73,23 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
       return
     }
 
+    // Create new AbortController
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
     const aiMessage = createMessage('assistant', '', { isStreaming: true })
     const aiMessageId = aiMessage.id
 
     setMessages((prev) => [...prev, aiMessage])
 
     try {
-      // 使用真实的 AI 流式响应
+      // Use real AI streaming response
       for await (const chunk of streamAIChat(conversationHistory, aiConfig)) {
+        // Check if cancelled
+        if (abortController.signal.aborted) {
+          break
+        }
+
         setMessages((prev) => {
           const lastMessageIndex = prev.length - 1
           const lastMessage = prev[lastMessageIndex]
@@ -76,7 +106,12 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
         })
       }
 
-      // 流式完成，更新状态
+      // If cancelled, don't update final state
+      if (abortController.signal.aborted) {
+        return
+      }
+
+      // Streaming complete, update state
       setMessages((prev) => {
         const lastMessageIndex = prev.length - 1
         const lastMessage = prev[lastMessageIndex]
@@ -92,25 +127,31 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
         return prev
       })
     } catch (error) {
-      // 处理错误
+      // If cancelled, don't show error
+      if (abortController.signal.aborted) {
+        return
+      }
+
+      // Handle error
       setMessages((prev) => [...prev, createMessage('system',
         `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`
       )])
+    } finally {
+      abortControllerRef.current = null
+      setIsLoading(false)
     }
-
-    setIsLoading(false)
   }, [aiConfig])
 
   const handleSendMessage = useCallback((content: string, showGoodbyeMessage?: string) => {
-    // 如果有告别消息，显示它
+    // If there's a goodbye message, show it
     if (showGoodbyeMessage) {
       setMessages((prev) => [...prev, createMessage('system', showGoodbyeMessage)])
       return
     }
     
-    // 检查是否是未知命令
+    // Check if it's an unknown command
     if (isCommand(content)) {
-      // 特殊处理 clear 命令
+      // Special handling for clear command
       const { command } = parseCommand(content)
       if (command === 'clear') {
         setMessages([])
@@ -123,11 +164,11 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
       return
     }
 
-    // 添加用户消息
+    // Add user message
     setMessages((prev) => [...prev, createMessage('user', content)])
     setIsLoading(true)
 
-    // 构建对话历史（包含新消息）
+    // Build conversation history (including new message)
     const conversationHistory = [
       ...messages.map(msg => ({
         role: msg.role,
@@ -139,7 +180,7 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
       }
     ]
 
-    // 调用真实 AI 响应
+    // Call real AI response
     streamAIResponse(conversationHistory)
   }, [messages, streamAIResponse])
 
@@ -152,6 +193,12 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
         commandRegistry={commandRegistry}
         onShowGoodbyeMessage={onShowGoodbyeMessage}
       />
+      {/* Show loading animation */}
+      {isLoading && (
+        <Box marginTop={1}>
+          <LoadingSpinner />
+        </Box>
+      )}
     </Box>
   )
 }

@@ -1,6 +1,6 @@
 /**
- * 输入处理 Hook
- * 封装复杂的输入逻辑
+ * Input Handler Hook
+ * Encapsulates complex input logic
  */
 import { useCallback } from 'react'
 import type { Key } from 'ink'
@@ -37,7 +37,7 @@ export function useInputHandler({
   onSendMessage
 }: UseInputHandlerProps) {
   return useCallback((input: string, key: Key) => {
-    // 命令列表导航
+    // Command list navigation
     if (showCommandList && filteredCommands.length > 0) {
       if (key.upArrow) {
         setSelectedCommandIndex(prev => 
@@ -53,7 +53,7 @@ export function useInputHandler({
         return
       }
       
-      // Tab 键自动补全
+      // Tab key autocomplete
       if (key.tab) {
         const selectedCommand = filteredCommands[selectedCommandIndex]
         if (selectedCommand) {
@@ -65,7 +65,7 @@ export function useInputHandler({
       }
     }
 
-    // 退格键
+    // Backspace key
     if (key.backspace || key.delete) {
       if (cursorPosition > 0) {
         const newValue = StringHelper.deleteAt(inputValue, cursorPosition)
@@ -75,7 +75,7 @@ export function useInputHandler({
       return
     }
 
-    // 左右箭头（仅在不显示命令列表时）
+    // Left/Right arrows (only when command list is not shown)
     if (key.leftArrow && !showCommandList) {
       setCursorPosition(Math.max(0, cursorPosition - 1))
       return
@@ -86,7 +86,7 @@ export function useInputHandler({
       return
     }
 
-    // Home/End 键
+    // Home/End keys
     if (key.meta && input === 'a') {
       setCursorPosition(0)
       return
@@ -97,12 +97,12 @@ export function useInputHandler({
       return
     }
 
-    // 回车键 - 发送消息或执行命令
+    // Enter key - send message or execute command
     if (key.return) {
       if (inputValue.trim() && !isLoading) {
         const trimmedInput = inputValue.trim()
         
-        // 检查是否是命令
+        // Check if it's a command
         if (trimmedInput.startsWith('/') && commandRegistry) {
           const { command: commandName } = parseCommand(trimmedInput)
           const command = commandRegistry.getCommand(commandName)
@@ -113,7 +113,7 @@ export function useInputHandler({
             onSendMessage(trimmedInput)
           }
         } else {
-          // 普通消息
+          // Regular message
           onSendMessage(trimmedInput)
         }
         
@@ -124,7 +124,7 @@ export function useInputHandler({
       return
     }
 
-    // 普通字符输入
+    // Regular character input
     if (!key.return && !key.escape && !key.ctrl && !key.meta && !key.tab && input) {
       const newValue = StringHelper.insertAt(inputValue, cursorPosition, input)
       setInputValue(newValue)

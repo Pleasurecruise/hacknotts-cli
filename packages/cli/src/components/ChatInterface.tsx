@@ -24,7 +24,7 @@ type ChatInterfaceProps = {
   onShowGoodbyeMessage?: (message: string) => void
 }
 
-// 提取 MessageItem 组件并使用 memo 优化
+// Extract MessageItem component and optimize with memo
 const MessageItem = memo(({ message }: { message: Message }) => {
   const config = MESSAGE_ROLE_CONFIG[message.role]
   
@@ -55,11 +55,11 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0)
   const [filteredCommands, setFilteredCommands] = useState<any[]>([])
   
-  // 随机选择一个 ASCII 字符画和名言，只在组件首次加载时选择一次
+  // Randomly select an ASCII logo and quote, only once on component mount
   const randomAsciiLogo = useMemo(() => getRandomAsciiLogo(), [])
   const randomQuote = useMemo(() => getRandomQuote(), [])
 
-  // 使用命令过滤 hook
+  // Use command filter hook
   useCommandFilter({
     inputValue,
     commandRegistry,
@@ -68,7 +68,7 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
     setShowCommandList
   })
 
-  // 使用输入处理 hook
+  // Use input handler hook
   const handleInput = useInputHandler({
     inputValue,
     setInputValue,
@@ -86,8 +86,21 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
 
   useInput(handleInput, { isActive: true })
 
-  // 渲染输入框
+  // Render input box
   const renderInput = useCallback(() => {
+    // If no input, show placeholder
+    if (inputValue.length === 0) {
+      return (
+        <Box flexDirection="row">
+          <Text color="cyan">› </Text>
+          <Text color="gray" dimColor>
+            {showCommandList ? 'Select a command or continue typing...' : 'Type your message...'}
+          </Text>
+          {isLoading && <Text color="yellow"> ⏳</Text>}
+        </Box>
+      )
+    }
+
     const chars = StringHelper.toChars(inputValue)
     const beforeCursor = chars.slice(0, cursorPosition).join('')
     const atCursor = chars[cursorPosition] || ' '
@@ -104,7 +117,7 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
         {isLoading && <Text color="yellow"> ⏳</Text>}
       </Box>
     )
-  }, [inputValue, cursorPosition, isLoading])
+  }, [inputValue, cursorPosition, isLoading, showCommandList])
 
   return (
     <Box flexDirection="column">
@@ -149,11 +162,10 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
         flexDirection="column"
         borderStyle="round" 
         borderColor={isLoading ? 'yellow' : showCommandList ? 'yellow' : 'green'}
-        padding={1}
+        paddingX={1}
+        paddingY={0}
+        minHeight={3}
       >
-        <Text color="gray" dimColor>
-          {showCommandList ? 'Select a command:' : 'Type your message:'}
-        </Text>
         {renderInput()}
       </Box>
     </Box>

@@ -1,6 +1,6 @@
 /**
- * 命令过滤 Hook
- * 处理命令搜索和过滤逻辑
+ * Command Filter Hook
+ * Handles command search and filtering logic
  */
 import { useEffect } from 'react'
 import type { CommandRegistry } from '../commands/types'
@@ -27,10 +27,10 @@ export function useCommandFilter({
       const allCommands = commandRegistry.getAllCommands()
       
       if (searchQuery === '') {
-        // 只输入了 /，显示所有命令
+        // Only entered /, show all commands
         setFilteredCommands(allCommands)
       } else {
-        // 过滤匹配的命令
+        // Filter matching commands
         const filtered = allCommands.filter(cmd => {
           const nameMatch = cmd.name.toLowerCase().includes(searchQuery)
           const aliasMatch = cmd.aliases?.some(alias => alias.toLowerCase().includes(searchQuery))
@@ -38,7 +38,7 @@ export function useCommandFilter({
           return nameMatch || aliasMatch || descMatch
         })
         
-        // 按匹配度排序
+        // Sort by relevance
         filtered.sort((a, b) => {
           const aStartsWith = a.name.toLowerCase().startsWith(searchQuery)
           const bStartsWith = b.name.toLowerCase().startsWith(searchQuery)
