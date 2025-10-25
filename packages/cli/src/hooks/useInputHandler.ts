@@ -17,6 +17,8 @@ interface UseInputHandlerProps {
   filteredCommands: any[]
   selectedCommandIndex: number
   setSelectedCommandIndex: (index: number | ((prev: number) => number)) => void
+  scrollOffset: number
+  setScrollOffset: (offset: number | ((prev: number) => number)) => void
   isLoading: boolean
   commandRegistry?: CommandRegistry
   onSendMessage: (message: string, showGoodbyeMessage?: string) => void
@@ -32,24 +34,66 @@ export function useInputHandler({
   filteredCommands,
   selectedCommandIndex,
   setSelectedCommandIndex,
+  scrollOffset,
+  setScrollOffset,
   isLoading,
   commandRegistry,
   onSendMessage
 }: UseInputHandlerProps) {
   return useCallback((input: string, key: Key) => {
+    // 计算可见区域的高度
+    const terminalHeight = process.stdout.rows || 24
+    const availableHeight = terminalHeight - 12
+    const boxHeight = Math.max(5, Math.min(availableHeight, 15))
+    const maxScroll = Math.max(0, filteredCommands.length - boxHeight)
+
     // Command list navigation
     if (showCommandList && filteredCommands.length > 0) {
       if (key.upArrow) {
-        setSelectedCommandIndex(prev => 
-          prev > 0 ? prev - 1 : filteredCommands.length - 1
-        )
+        setSelectedCommandIndex(prev => {
+          const newIndex = prev > 0 ? prev - 1 : filteredCommands.length - 1
+          
+          // 自动滚动以确保选中项可见
+          if (newIndex < scrollOffset) {
+            setScrollOffset(newIndex)
+          } else if (newIndex >= scrollOffset + boxHeight) {
+            setScrollOffset(Math.max(0, newIndex - boxHeight + 1))
+          }
+          
+          return newIndex
+        })
         return
       }
       
       if (key.downArrow) {
-        setSelectedCommandIndex(prev => 
-          prev < filteredCommands.length - 1 ? prev + 1 : 0
-        )
+        setSelectedCommandIndex(prev => {
+          const newIndex = prev < filteredCommands.length - 1 ? prev + 1 : 0
+          
+          // 自动滚动以确保选中项可见
+          if (newIndex < scrollOffset) {
+            setScrollOffset(newIndex)
+          } else if (newIndex >= scrollOffset + boxHeight) {
+            setScrollOffset(Math.max(0, newIndex - boxHeight + 1))
+          }
+          
+          return newIndex
+        })
+        return
+      }
+
+      // Page Up - 向上翻页
+      if (key.pageUp) {
+        const newScroll = Math.max(0, scrollOffset - boxHeight)
+        setScrollOffset(newScroll)
+        setSelectedCommandIndex(newScroll)
+        return
+      }
+
+      // Page Down - 向下翻页
+      if (key.pageDown) {
+        const newScroll = Math.min(maxScroll, scrollOffset + boxHeight)
+        setScrollOffset(newScroll)
+        setSelectedCommandIndex(Math.min(filteredCommands.length - 1, newScroll))
         return
       }
       
@@ -136,12 +180,14 @@ export function useInputHandler({
     showCommandList,
     filteredCommands,
     selectedCommandIndex,
+    scrollOffset,
     isLoading,
     commandRegistry,
     onSendMessage,
     setInputValue,
     setCursorPosition,
     setShowCommandList,
-    setSelectedCommandIndex
+    setSelectedCommandIndex,
+    setScrollOffset
   ])
 }

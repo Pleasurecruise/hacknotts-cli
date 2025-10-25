@@ -34,10 +34,11 @@ export const compactLogo = `
 // Fun decorative banner for the hackathon spirit
 export const decorativeBanner = `
 ╔═══════════════════════════════════════════════════════════════════════════╗
-║  🎉  Welcome to HackNotts 2025 CLI - Where Ideas Come to Life!  🎉      ║
-║  📅 October 25-26 | 24-Hour Hackathon | University of Nottingham        ║
-║  💡 For all skill levels • Friendly competition • Playful cleverness     ║
-╚═══════════════════════════════════════════════════════════════════════════╝`;
+║  🎉  Welcome to HackNotts 2025 CLI - Where Ideas Come to Life!  🎉        ║
+║  📅  October 25-26 | 24-Hour Hackathon | University of Nottingham         ║
+║  💡  For all skill levels • Friendly competition • Playful cleverness     ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+`;
 
 // Simple decorative elements
 export const headerDecoration = `

@@ -13,7 +13,7 @@ let renderInstance: ReturnType<typeof render> | null = null
 export const getRenderInstance = () => renderInstance
 
 export const runCli = async (): Promise<void> => {
-  renderInstance = render(<App />)
+  renderInstance = render(<App />, { exitOnCtrlC: false })
   await renderInstance.waitUntilExit()
 }
 

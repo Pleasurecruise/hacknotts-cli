@@ -2,6 +2,7 @@ import { Box, Text, useInput } from 'ink'
 import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import type { CommandRegistry } from '../commands'
 import CommandList from './CommandList'
+import LoadingSpinner from './LoadingSpinner'
 import { getRandomAsciiLogo, getRandomQuote, decorativeBanner } from '../ui/AsciiArt'
 import { MESSAGE_ROLE_CONFIG } from '../utils/constants'
 import { StringHelper } from '../utils/helpers'
@@ -22,6 +23,8 @@ type ChatInterfaceProps = {
   isLoading?: boolean
   commandRegistry?: CommandRegistry
   onShowGoodbyeMessage?: (message: string) => void
+  provider?: string
+  model?: string
 }
 
 // Extract MessageItem component and optimize with memo
@@ -48,11 +51,12 @@ const MessageItem = memo(({ message }: { message: Message }) => {
 
 MessageItem.displayName = 'MessageItem'
 
-export const ChatInterface = ({ onSendMessage, messages, isLoading = false, commandRegistry, onShowGoodbyeMessage }: ChatInterfaceProps) => {
+export const ChatInterface = ({ onSendMessage, messages, isLoading = false, commandRegistry, onShowGoodbyeMessage, provider, model }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState('')
   const [cursorPosition, setCursorPosition] = useState(0)
   const [showCommandList, setShowCommandList] = useState(false)
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0)
+  const [scrollOffset, setScrollOffset] = useState(0)
   const [filteredCommands, setFilteredCommands] = useState<any[]>([])
   
   // Randomly select an ASCII logo and quote, only once on component mount
@@ -68,6 +72,11 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
     setShowCommandList
   })
 
+  // Reset scroll offset when filtered commands change
+  useEffect(() => {
+    setScrollOffset(0)
+  }, [filteredCommands])
+
   // Use input handler hook
   const handleInput = useInputHandler({
     inputValue,
@@ -79,6 +88,8 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
     filteredCommands,
     selectedCommandIndex,
     setSelectedCommandIndex,
+    scrollOffset,
+    setScrollOffset,
     isLoading,
     commandRegistry,
     onSendMessage
@@ -96,7 +107,6 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
           <Text color="gray" dimColor>
             {showCommandList ? 'Select a command or continue typing...' : 'Type your message...'}
           </Text>
-          {isLoading && <Text color="yellow"> ⏳</Text>}
         </Box>
       )
     }
@@ -114,10 +124,9 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
           <Text inverse color="white" backgroundColor="cyan">{atCursor}</Text>
           {afterCursor}
         </Text>
-        {isLoading && <Text color="yellow"> ⏳</Text>}
       </Box>
     )
-  }, [inputValue, cursorPosition, isLoading, showCommandList])
+  }, [inputValue, cursorPosition, showCommandList])
 
   return (
     <Box flexDirection="column">
@@ -153,8 +162,16 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
           commands={filteredCommands}
           selectedIndex={selectedCommandIndex}
           searchQuery={inputValue.slice(1)}
+          scrollOffset={scrollOffset}
           onClose={() => setShowCommandList(false)}
         />
+      )}
+
+      {/* Loading indicator - Above input box */}
+      {isLoading && (
+        <Box marginBottom={1}>
+          <LoadingSpinner />
+        </Box>
       )}
 
       {/* Input Box - Always at Bottom */}
@@ -167,6 +184,18 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
         minHeight={3}
       >
         {renderInput()}
+      </Box>
+
+      {/* Current working directory and model info - Below input box */}
+      <Box marginTop={1} justifyContent="space-between">
+        <Text color="gray">
+          Working Directory: <Text color="cyan">{process.cwd()}</Text>
+        </Text>
+        {provider && model && (
+          <Text color="gray">
+            Provider: <Text color="magenta">{provider}</Text> • Model: <Text color="green">{model}</Text>
+          </Text>
+        )}
       </Box>
     </Box>
   )

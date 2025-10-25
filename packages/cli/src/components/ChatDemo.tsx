@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Box, useInput } from 'ink'
-import type { Key } from 'ink'
+import { Box } from 'ink'
 import ChatInterface, { type Message } from './ChatInterface'
 import type { CommandRegistry } from '../commands/types'
 import { initializeAIProvider, streamAIChat, type AIConfig } from '../services/aiService'
 import { createMessage, isCommand, parseCommand } from '../utils/helpers'
-import LoadingSpinner from './LoadingSpinner'
 
 type ChatDemoProps = {
   commandRegistry?: CommandRegistry
@@ -24,24 +22,6 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
   useEffect(() => {
     onHasMessages?.(messages.length > 0)
   }, [messages.length, onHasMessages])
-
-  // Listen for Ctrl+C to cancel request
-  useInput((input: string, key: Key) => {
-    if (key.ctrl && input === 'c' && isLoading) {
-      // Cancel current AI request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-        abortControllerRef.current = null
-      }
-      setIsLoading(false)
-      
-      // Remove streaming message
-      setMessages((prev) => {
-        const filtered = prev.filter(msg => !msg.isStreaming)
-        return [...filtered, createMessage('system', 'Request cancelled')]
-      })
-    }
-  }, { isActive: isLoading })
 
   // Initialize AI Provider
   useEffect(() => {
@@ -154,6 +134,9 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
       // Special handling for clear command
       const { command } = parseCommand(content)
       if (command === 'clear') {
+        // Clear terminal screen
+        process.stdout.write('\x1Bc')
+        // Clear chat messages
         setMessages([])
         return
       }
@@ -192,13 +175,9 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
         isLoading={isLoading}
         commandRegistry={commandRegistry}
         onShowGoodbyeMessage={onShowGoodbyeMessage}
+        provider={aiConfig?.providerId}
+        model={aiConfig?.model}
       />
-      {/* Show loading animation */}
-      {isLoading && (
-        <Box marginTop={1}>
-          <LoadingSpinner />
-        </Box>
-      )}
     </Box>
   )
 }

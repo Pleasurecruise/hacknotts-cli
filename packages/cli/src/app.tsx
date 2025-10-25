@@ -7,7 +7,10 @@ import {
 } from '@cherrystudio/ai-core/provider'
 import { getRandomAsciiLogo, robotMascot } from './ui/AsciiArt'
 import ChatDemo from './components/ChatDemo'
+import GoodbyeBox from './components/GoodbyeBox'
 import { createCommandRegistry, createProviderCommand, createHelpCommand, createClearCommand, createExitCommand } from './commands'
+import { GOODBYE_MESSAGES } from './utils/constants'
+import { randomChoice } from './utils/helpers'
 
 type SupportedProvider = ReturnType<typeof getSupportedProviders>[number]
 type ProviderStatus = {
@@ -25,13 +28,28 @@ export const App = () => {
   const [lastUpdated, setLastUpdated] = useState(() => new Date().toISOString())
   const [viewMode, setViewMode] = useState<ViewMode>('chat')
   const [hasMessages, setHasMessages] = useState(false) // 跟踪是否有消息
+  const [showGoodbye, setShowGoodbye] = useState(false) // 是否显示告别消息
+  const [goodbyeMessage, setGoodbyeMessage] = useState('') // 告别消息内容
+  const [ctrlCPressed, setCtrlCPressed] = useState(false) // Ctrl+C 按下次数
 
   // 随机选择一个 ASCII 字符画，只在组件首次加载时选择一次
   const randomAsciiLogo = useMemo(() => getRandomAsciiLogo(), [])
   
+  // 执行退出操作
+  const performExit = (message?: string) => {
+    const finalMessage = message || randomChoice(GOODBYE_MESSAGES)
+    setGoodbyeMessage(finalMessage)
+    setShowGoodbye(true)
+    
+    // 延迟退出以显示告别消息
+    setTimeout(() => {
+      exit()
+    }, 1000)
+  }
+  
   // 告别消息回调
   const handleShowGoodbyeMessage = (message: string) => {
-    // 在这里可以显示告别消息，现在通过 ChatDemo 传递
+    performExit(message)
   }
 
   // 创建命令注册表
@@ -60,31 +78,55 @@ export const App = () => {
     // 注册 exit 命令
     registry.registerCommand(
       createExitCommand(() => {
-        exit()
+        performExit()
       }, handleShowGoodbyeMessage)
     )
     
     return registry
-  }, [exit])
+  }, [])
 
+  // 全局 Ctrl+C 处理 (二次确认机制)
   useInput((input: string, key: Key) => {
+    // 如果已经显示告别消息，忽略所有输入
+    if (showGoodbye) {
+      return
+    }
+
+    // 处理 Ctrl+C
+    if (key.ctrl && input === 'c') {
+      if (ctrlCPressed) {
+        // 第二次按下 Ctrl+C，执行退出
+        performExit()
+      } else {
+        // 第一次按下 Ctrl+C，设置标志并提示
+        setCtrlCPressed(true)
+        // 3秒后重置标志
+        setTimeout(() => {
+          setCtrlCPressed(false)
+        }, 3000)
+      }
+      return
+    }
+    
     // 只在 providers 视图处理这些快捷键
     if (viewMode === 'providers') {
-      if (key.ctrl && input === 'c' || input.toLowerCase() === 'q') {
-        exit()
+      if (input.toLowerCase() === 'q') {
+        performExit()
+        return
       }
       
       // 按 C 返回 Chat 视图
       if (input.toLowerCase() === 'c') {
         setViewMode('chat')
+        return
       }
     }
 
     // ESC 退出（在任何视图都可用）
     if (key.escape) {
-      exit()
+      performExit()
     }
-  }, { isActive: viewMode === 'providers' })
+  }, { isActive: !showGoodbye })
 
   const statuses: ProviderStatus[] = useMemo(() => {
     const active = new Set(initialized)
@@ -94,6 +136,11 @@ export const App = () => {
       active: active.has(provider.id)
     }))
   }, [supported, initialized])
+
+  // 如果显示告别消息，只显示告别框
+  if (showGoodbye) {
+    return <GoodbyeBox message={goodbyeMessage} />
+  }
 
   // Chat View
   if (viewMode === 'chat') {
@@ -110,6 +157,12 @@ export const App = () => {
           <Box paddingX={1} borderStyle="round" borderColor="cyan">
             <Text color="cyan">💬 HackNotts CLI • </Text>
             <Text color="gray" dimColor>Type <Text color="yellow">/provider</Text> to view providers | <Text color="yellow">ESC</Text> to exit</Text>
+          </Box>
+        )}
+        {/* Ctrl+C 提示 */}
+        {ctrlCPressed && (
+          <Box paddingX={1} borderStyle="round" borderColor="red" marginBottom={1}>
+            <Text color="red" bold>⚠️  Press Ctrl+C again to exit, or any other key to cancel</Text>
           </Box>
         )}
         <ChatDemo

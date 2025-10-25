@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink'
-import { memo } from 'react'
+import { memo, useState, useEffect, useMemo } from 'react'
 import type { Command } from '../commands/types'
 
 type CommandListProps = {
@@ -7,19 +7,70 @@ type CommandListProps = {
   onClose: () => void
   selectedIndex?: number
   searchQuery?: string
+  scrollOffset?: number
 }
 
-export const CommandList = memo(({ commands, selectedIndex = 0, searchQuery = '' }: CommandListProps) => {
+export const CommandList = memo(({ 
+  commands, 
+  selectedIndex = 0, 
+  searchQuery = '',
+  scrollOffset = 0
+}: CommandListProps) => {
+  const [boxHeight, setBoxHeight] = useState(8)
+  
+  // 监听终端尺寸变化
+  useEffect(() => {
+    const updateHeight = () => {
+      const terminalHeight = process.stdout.rows || 24
+      // 预留顶部标题、底部提示和输入框的空间
+      const availableHeight = terminalHeight - 12
+      setBoxHeight(Math.max(5, Math.min(availableHeight, 15)))
+    }
+
+    process.stdout.on('resize', updateHeight)
+    updateHeight()
+
+    return () => {
+      process.stdout.off('resize', updateHeight)
+    }
+  }, [])
+
+  // 计算可见的命令
+  const { visibleCommands, canScrollUp, canScrollDown, scrollPercentage } = useMemo(() => {
+    if (commands.length === 0) {
+      return {
+        visibleCommands: [],
+        canScrollUp: false,
+        canScrollDown: false,
+        scrollPercentage: 0
+      }
+    }
+
+    const visible = commands.slice(scrollOffset, scrollOffset + boxHeight)
+    const canUp = scrollOffset > 0
+    const canDown = scrollOffset + boxHeight < commands.length
+    const percentage = commands.length <= boxHeight 
+      ? 100 
+      : Math.round((scrollOffset / Math.max(1, commands.length - boxHeight)) * 100)
+
+    return {
+      visibleCommands: visible,
+      canScrollUp: canUp,
+      canScrollDown: canDown,
+      scrollPercentage: percentage
+    }
+  }, [commands, scrollOffset, boxHeight])
+
   if (commands.length === 0) {
     return (
       <Box 
         flexDirection="column" 
         borderStyle="round" 
         borderColor="yellow"
-        padding={1}
-        marginY={1}
+        paddingX={1}
+        paddingY={0}
       >
-        <Box marginBottom={1}>
+        <Box>
           <Text bold color="yellow">📋 Available Commands</Text>
         </Box>
         <Box>
@@ -34,45 +85,67 @@ export const CommandList = memo(({ commands, selectedIndex = 0, searchQuery = ''
       flexDirection="column" 
       borderStyle="round" 
       borderColor="yellow"
-      padding={1}
-      marginY={1}
+      paddingX={1}
+      paddingY={0}
     >
-      <Box marginBottom={1}>
+      <Box>
         <Text bold color="yellow">📋 Available Commands</Text>
         {searchQuery && (
           <Text color="gray" dimColor> (searching: "{searchQuery}")</Text>
         )}
       </Box>
       
-      {commands.map((command, index) => {
-        const isSelected = index === selectedIndex
+      <Box flexDirection="column" borderStyle="single" borderColor="cyan">
+        {visibleCommands.map((command, index) => {
+          const actualIndex = scrollOffset + index
+          const isSelected = actualIndex === selectedIndex
+          
+          return (
+            <Box key={command.name} flexDirection="column">
+              <Box>
+                {isSelected && <Text color="green">▶ </Text>}
+                {!isSelected && <Text>  </Text>}
+                <Text 
+                  color={isSelected ? "green" : "cyan"} 
+                  bold={isSelected}
+                  inverse={isSelected}
+                >
+                  /{command.name}
+                </Text>
+                {command.aliases && command.aliases.length > 0 && (
+                  <Text color="gray" dimColor> (aliases: {command.aliases.map(a => `/${a}`).join(', ')})</Text>
+                )}
+              </Box>
+              <Box paddingLeft={3}>
+                <Text color={isSelected ? "white" : "gray"}>{command.description}</Text>
+              </Box>
+            </Box>
+          )
+        })}
         
-        return (
-          <Box key={command.name} flexDirection="column" marginBottom={1}>
-            <Box>
-              {isSelected && <Text color="green">▶ </Text>}
-              {!isSelected && <Text>  </Text>}
-              <Text 
-                color={isSelected ? "green" : "cyan"} 
-                bold={isSelected}
-                inverse={isSelected}
-              >
-                /{command.name}
-              </Text>
-              {command.aliases && command.aliases.length > 0 && (
-                <Text color="gray" dimColor> (aliases: {command.aliases.map(a => `/${a}`).join(', ')})</Text>
-              )}
-            </Box>
-            <Box paddingLeft={4}>
-              <Text color={isSelected ? "white" : "gray"}>{command.description}</Text>
-            </Box>
+        {/* 滚动条指示器 */}
+        {commands.length > boxHeight && (
+          <Box>
+            <Text color="yellow" backgroundColor="black">
+              {canScrollUp ? '▲ ' : '  '}Scroll [{String(scrollPercentage).padStart(3, ' ')}%]{canScrollDown ? ' ▼' : '  '}
+            </Text>
           </Box>
-        )
-      })}
-      
-      <Box marginTop={1} borderStyle="single" borderTop paddingTop={1}>
-        <Text color="gray" dimColor>💡 ↑↓ to navigate | Tab to complete | Enter to execute</Text>
+        )}
       </Box>
+      
+      <Box>
+        <Text color="gray" dimColor>
+          💡 ↑↓ View | Tab Complete | Enter Execute {commands.length > boxHeight && '| PgUp/PgDn Change Page'}
+        </Text>
+      </Box>
+      
+      {commands.length > boxHeight && (
+        <Box>
+          <Text color="cyan" dimColor>
+            Display: {scrollOffset + 1}-{Math.min(scrollOffset + boxHeight, commands.length)} / {commands.length}
+          </Text>
+        </Box>
+      )}
     </Box>
   )
 })
