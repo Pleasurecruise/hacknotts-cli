@@ -1,6 +1,7 @@
 import { Box, Text, useApp, useInput } from 'ink'
 import type { Key } from 'ink'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
+import type { ProviderId } from '@cherrystudio/ai-core/provider'
 import {
   getInitializedProviders,
   getSupportedProviders
@@ -8,6 +9,7 @@ import {
 import { getRandomAsciiLogo, robotMascot } from './ui/AsciiArt'
 import ChatDemo from './components/ChatDemo'
 import GoodbyeBox from './components/GoodbyeBox'
+import type { AIConfig } from './services/aiService'
 import { createCommandRegistry, createProviderCommand, createHelpCommand, createClearCommand, createExitCommand } from './commands'
 import { GOODBYE_MESSAGES } from './utils/constants'
 import { randomChoice } from './utils/helpers'
@@ -17,6 +19,8 @@ type ProviderStatus = {
   id: string
   name: string
   active: boolean
+  model?: string
+  isCurrent?: boolean
 }
 
 type ViewMode = 'providers' | 'chat'
@@ -25,6 +29,9 @@ export const App = () => {
   const { exit } = useApp()
   const supported = useMemo(() => getSupportedProviders(), [])
   const [initialized, setInitialized] = useState<string[]>(() => getInitializedProviders())
+  const [providerConfigs, setProviderConfigs] = useState<AIConfig[]>([])
+  const [currentProviderId, setCurrentProviderId] = useState<ProviderId | null>(null)
+  const [selectedIndex, setSelectedIndex] = useState(0)
   const [lastUpdated, setLastUpdated] = useState(() => new Date().toISOString())
   const [viewMode, setViewMode] = useState<ViewMode>('chat')
   const [hasMessages, setHasMessages] = useState(false) // 跟踪是否有消息
@@ -47,6 +54,30 @@ export const App = () => {
     }, 1000)
   }
   
+
+  // 处理 provider 切换事件
+  const handleProviderSwitch = useCallback((providerId: ProviderId, configs: AIConfig[]) => {
+    setCurrentProviderId(providerId)
+    setProviderConfigs(configs)
+    setInitialized(configs.map(c => c.providerId))
+    setLastUpdated(new Date().toISOString())
+
+    // 更新选中索引为当前 provider
+    const activeStatuses = configs.map(config => {
+      const supportedProvider = supported.find(s => s.id === config.providerId)
+      return {
+        id: config.providerId,
+        name: supportedProvider?.name || config.providerId,
+        active: true,
+        model: config.model
+      }
+    })
+    const currentIndex = activeStatuses.findIndex(s => s.id === providerId)
+    if (currentIndex >= 0) {
+      setSelectedIndex(currentIndex)
+    }
+  }, [supported])
+
   // 告别消息回调
   const handleShowGoodbyeMessage = (message: string) => {
     performExit(message)
@@ -110,11 +141,44 @@ export const App = () => {
     
     // 只在 providers 视图处理这些快捷键
     if (viewMode === 'providers') {
-      if (input.toLowerCase() === 'q') {
-        performExit()
+      // 上箭头 - 向上选择
+      if (key.upArrow) {
+        setSelectedIndex(prev => {
+          const activeProviders = providerConfigs.length
+          return prev > 0 ? prev - 1 : activeProviders - 1
+        })
         return
       }
-      
+
+      // 下箭头 - 向下选择
+      if (key.downArrow) {
+        setSelectedIndex(prev => {
+          const activeProviders = providerConfigs.length
+          return prev < activeProviders - 1 ? prev + 1 : 0
+        })
+        return
+      }
+
+      // Enter - 切换到选中的 provider
+      if (key.return && providerConfigs.length > 0) {
+        const selectedConfig = providerConfigs[selectedIndex]
+        if (selectedConfig && (globalThis as any).__switchProvider) {
+          ;(globalThis as any).__switchProvider(selectedConfig.providerId)
+          setViewMode('chat') // 切换后返回聊天视图
+        }
+        return
+      }
+
+      // R - 刷新
+      if (input.toLowerCase() === 'r') {
+        setLastUpdated(new Date().toISOString())
+        return
+      }
+
+      if (key.ctrl && input === 'c' || input.toLowerCase() === 'q') {
+        exit()
+      }
+
       // 按 C 返回 Chat 视图
       if (input.toLowerCase() === 'c') {
         setViewMode('chat')
@@ -129,13 +193,18 @@ export const App = () => {
   }, { isActive: !showGoodbye })
 
   const statuses: ProviderStatus[] = useMemo(() => {
-    const active = new Set(initialized)
-  return supported.map((provider: SupportedProvider) => ({
-      id: provider.id,
-      name: provider.name,
-      active: active.has(provider.id)
-    }))
-  }, [supported, initialized])
+    // 只显示已初始化的 providers
+    return providerConfigs.map((config) => {
+      const supportedProvider = supported.find(s => s.id === config.providerId)
+      return {
+        id: config.providerId,
+        name: supportedProvider?.name || config.providerId,
+        active: true,
+        model: config.model,
+        isCurrent: config.providerId === currentProviderId
+      }
+    })
+  }, [providerConfigs, currentProviderId, supported])
 
   // 如果显示告别消息，只显示告别框
   if (showGoodbye) {
@@ -169,6 +238,7 @@ export const App = () => {
           commandRegistry={commandRegistry}
           onShowGoodbyeMessage={handleShowGoodbyeMessage}
           onHasMessages={setHasMessages}
+          onProviderSwitch={handleProviderSwitch}
         />
       </Box>
     )
@@ -212,20 +282,44 @@ export const App = () => {
 
         {/* Provider List */}
         <Box flexDirection="column" paddingY={1}>
-          <Text color="cyan" bold>📋 Provider Status:</Text>
-          {statuses.map((provider) => (
-            <Text key={provider.id} color={provider.active ? 'green' : 'gray'}>
-              {provider.active ? '✅' : '⬜'} {provider.name} <Text dimColor>({provider.id})</Text>
-            </Text>
-          ))}
+          <Text color="cyan" bold>📋 Available Providers:</Text>
+          {statuses.length === 0 ? (
+            <Text color="gray" dimColor>  No providers initialized yet</Text>
+          ) : (
+            statuses.map((provider, index) => {
+              const isSelected = index === selectedIndex
+              const isCurrent = provider.isCurrent
+
+              return (
+                <Box key={provider.id} paddingX={1}>
+                  <Text
+                    color={isCurrent ? 'green' : isSelected ? 'yellow' : 'white'}
+                    bold={isCurrent || isSelected}
+                  >
+                    {isSelected ? '▶ ' : '  '}
+                    {isCurrent ? '⚡' : '✓'} {provider.name}
+                    <Text dimColor> ({provider.id})</Text>
+                    {provider.model && (
+                      <Text color="cyan" dimColor> • {provider.model}</Text>
+                    )}
+                    {isCurrent && <Text color="green"> [ACTIVE]</Text>}
+                  </Text>
+                </Box>
+              )
+            })
+          )}
         </Box>
       </Box>
 
       {/* Footer Section */}
       <Box flexDirection="column" borderStyle="round" borderColor="gray" paddingX={1}>
         <Text color="yellow" bold>⌨️  Keyboard Shortcuts:</Text>
-        <Text color="gray">  <Text color="green">C</Text> - Return to Chat   <Text color="green">R</Text> - Refresh   <Text color="green">Q/ESC</Text> - Exit</Text>
+        <Text color="gray">  <Text color="green">↑/↓</Text> - Navigate   <Text color="green">Enter</Text> - Switch Provider   <Text color="green">C</Text> - Return to Chat</Text>
+        <Text color="gray">  <Text color="green">R</Text> - Refresh   <Text color="green">Q/ESC</Text> - Exit</Text>
         <Text color="gray" dimColor>Last updated: {new Date(lastUpdated).toLocaleString()}</Text>
+        {currentProviderId && (
+          <Text color="green" dimColor>Current provider: {currentProviderId}</Text>
+        )}
       </Box>
     </Box>
   )
