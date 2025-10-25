@@ -1,8 +1,9 @@
 import { Box, Text, useInput, useStdout } from 'ink'
 import type { Key } from 'ink'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import type { CommandRegistry } from '../commands/types'
 import CommandList from './CommandList'
+import { getRandomAsciiLogo } from '../ui/AsciiArt'
 
 export type Message = {
   id: string
@@ -23,10 +24,82 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
   const [inputValue, setInputValue] = useState('')
   const [cursorPosition, setCursorPosition] = useState(0)
   const [showCommandList, setShowCommandList] = useState(false)
+  const [selectedCommandIndex, setSelectedCommandIndex] = useState(0)
+  const [filteredCommands, setFilteredCommands] = useState<any[]>([])
   const { stdout } = useStdout()
   const [visibleMessageCount, setVisibleMessageCount] = useState(10) // 默认显示最后10条消息
+  
+  // 随机选择一个 ASCII 字符画，只在组件首次加载时选择一次
+  const randomAsciiLogo = useMemo(() => getRandomAsciiLogo(), [])
+
+  // 搜索和过滤命令
+  useEffect(() => {
+    if (inputValue.startsWith('/') && commandRegistry) {
+      const searchQuery = inputValue.slice(1).toLowerCase()
+      const allCommands = commandRegistry.getAllCommands()
+      
+      if (searchQuery === '') {
+        // 如果只输入了 /，显示所有命令
+        setFilteredCommands(allCommands)
+      } else {
+        // 过滤匹配的命令
+        const filtered = allCommands.filter(cmd => {
+          const nameMatch = cmd.name.toLowerCase().includes(searchQuery)
+          const aliasMatch = cmd.aliases?.some(alias => alias.toLowerCase().includes(searchQuery))
+          const descMatch = cmd.description.toLowerCase().includes(searchQuery)
+          return nameMatch || aliasMatch || descMatch
+        })
+        
+        // 按匹配度排序：优先显示命令名开头匹配的
+        filtered.sort((a, b) => {
+          const aStartsWith = a.name.toLowerCase().startsWith(searchQuery)
+          const bStartsWith = b.name.toLowerCase().startsWith(searchQuery)
+          if (aStartsWith && !bStartsWith) return -1
+          if (!aStartsWith && bStartsWith) return 1
+          return a.name.localeCompare(b.name)
+        })
+        
+        setFilteredCommands(filtered)
+      }
+      
+      // 重置选中索引
+      setSelectedCommandIndex(0)
+      setShowCommandList(true)
+    } else {
+      setShowCommandList(false)
+      setFilteredCommands([])
+    }
+  }, [inputValue, commandRegistry])
 
   useInput((input: string, key: Key) => {
+    // 处理上下键导航命令列表
+    if (showCommandList && filteredCommands.length > 0) {
+      if (key.upArrow) {
+        setSelectedCommandIndex(prev => 
+          prev > 0 ? prev - 1 : filteredCommands.length - 1
+        )
+        return
+      }
+      
+      if (key.downArrow) {
+        setSelectedCommandIndex(prev => 
+          prev < filteredCommands.length - 1 ? prev + 1 : 0
+        )
+        return
+      }
+      
+      // 处理 Tab 键自动补全
+      if (key.tab) {
+        const selectedCommand = filteredCommands[selectedCommandIndex]
+        if (selectedCommand) {
+          const newValue = `/${selectedCommand.name} `
+          setInputValue(newValue)
+          setCursorPosition(newValue.length)
+        }
+        return
+      }
+    }
+
     // 处理退格键
     if (key.backspace || key.delete) {
       if (cursorPosition > 0) {
@@ -37,14 +110,14 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
       return
     }
 
-    // 处理左箭头
-    if (key.leftArrow) {
+    // 处理左箭头（仅在不显示命令列表时）
+    if (key.leftArrow && !showCommandList) {
       setCursorPosition(Math.max(0, cursorPosition - 1))
       return
     }
 
-    // 处理右箭头
-    if (key.rightArrow) {
+    // 处理右箭头（仅在不显示命令列表时）
+    if (key.rightArrow && !showCommandList) {
       setCursorPosition(Math.min(inputValue.length, cursorPosition + 1))
       return
     }
@@ -66,6 +139,19 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
       if (inputValue.trim() && !isLoading) {
         const trimmedInput = inputValue.trim()
         
+        // 如果显示命令列表且有选中的命令，执行选中的命令
+        if (showCommandList && filteredCommands.length > 0) {
+          const selectedCommand = filteredCommands[selectedCommandIndex]
+          if (selectedCommand && trimmedInput === '/' || trimmedInput.slice(1) !== selectedCommand.name) {
+            // 如果只是输入 / 或者搜索中，直接补全并等待参数
+            const commandInput = `/${selectedCommand.name} `
+            setInputValue(commandInput)
+            setCursorPosition(commandInput.length)
+            setShowCommandList(false)
+            return
+          }
+        }
+        
         // 检查是否是命令
         if (trimmedInput.startsWith('/') && commandRegistry) {
           const executed = commandRegistry.executeCommand(trimmedInput)
@@ -86,17 +172,10 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
     }
 
     // 处理普通字符输入
-    if (!key.return && !key.escape && !key.ctrl && !key.meta && input) {
+    if (!key.return && !key.escape && !key.ctrl && !key.meta && !key.tab && input) {
       const newValue = inputValue.slice(0, cursorPosition) + input + inputValue.slice(cursorPosition)
       setInputValue(newValue)
       setCursorPosition(cursorPosition + 1)
-      
-      // 检查是否应该显示命令列表
-      if (newValue.startsWith('/') && commandRegistry) {
-        setShowCommandList(true)
-      } else {
-        setShowCommandList(false)
-      }
     }
   })
 
@@ -173,10 +252,17 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
       {/* Messages Area - 动态渲染最近的消息,避免使用Static导致终端累积 */}
       <Box flexDirection="column" marginY={1}>
         {messages.length === 0 ? (
-          <Box flexDirection="column" paddingY={2}>
-            <Text color="gray" dimColor>No messages yet. Start typing to begin!</Text>
-            <Text color="gray" dimColor>Type / to see available commands</Text>
-            <Text color="gray" dimColor>Press Enter to send message</Text>
+          <Box flexDirection="column" paddingY={2} alignItems="center" justifyContent="center">
+            {/* 居中显示随机 ASCII 字符画 */}
+            <Box marginBottom={2}>
+              <Text color="cyan">{randomAsciiLogo}</Text>
+            </Box>
+            {/* 提示信息 */}
+            <Box flexDirection="column" alignItems="center">
+              <Text color="gray" dimColor>Start typing to begin your conversation!</Text>
+              <Text color="gray" dimColor>Type / to see available commands</Text>
+              <Text color="gray" dimColor>Press Enter to send message</Text>
+            </Box>
           </Box>
         ) : (
           <Box flexDirection="column">
@@ -198,7 +284,9 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
       {/* Command List - Show when input starts with / */}
       {showCommandList && commandRegistry && (
         <CommandList 
-          commands={commandRegistry.getAllCommands()}
+          commands={filteredCommands}
+          selectedIndex={selectedCommandIndex}
+          searchQuery={inputValue.slice(1)}
           onClose={() => setShowCommandList(false)}
         />
       )}
