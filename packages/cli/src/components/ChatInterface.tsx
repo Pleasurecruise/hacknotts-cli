@@ -142,7 +142,10 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
     // 处理退格键
     if (key.backspace || key.delete) {
       if (cursorPosition > 0) {
-        const newValue = inputValue.slice(0, cursorPosition - 1) + inputValue.slice(cursorPosition)
+        const chars = Array.from(inputValue)
+        const beforeCursor = chars.slice(0, cursorPosition - 1).join('')
+        const afterCursor = chars.slice(cursorPosition).join('')
+        const newValue = beforeCursor + afterCursor
         setInputValue(newValue)
         setCursorPosition(cursorPosition - 1)
       }
@@ -157,7 +160,8 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
 
     // 处理右箭头（仅在不显示命令列表时）
     if (key.rightArrow && !showCommandList) {
-      setCursorPosition(Math.min(inputValue.length, cursorPosition + 1))
+      const maxPosition = Array.from(inputValue).length
+      setCursorPosition(Math.min(maxPosition, cursorPosition + 1))
       return
     }
 
@@ -169,7 +173,7 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
 
     // 处理 End 键
     if (key.meta && input === 'e') {
-      setCursorPosition(inputValue.length)
+      setCursorPosition(Array.from(inputValue).length)
       return
     }
 
@@ -244,9 +248,18 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
 
     // 处理普通字符输入
     if (!key.return && !key.escape && !key.ctrl && !key.meta && !key.tab && input) {
-      const newValue = inputValue.slice(0, cursorPosition) + input + inputValue.slice(cursorPosition)
+      // 使用字符数组来正确处理多字节字符
+      const chars = Array.from(inputValue)
+      const beforeCursor = chars.slice(0, cursorPosition)
+      const afterCursor = chars.slice(cursorPosition)
+      
+      // 将新输入也转换为字符数组
+      const newChars = Array.from(input)
+      const newValue = [...beforeCursor, ...newChars, ...afterCursor].join('')
+      
       setInputValue(newValue)
-      setCursorPosition(cursorPosition + 1)
+      // 光标位置向后移动输入字符的数量
+      setCursorPosition(cursorPosition + newChars.length)
     }
   }, [inputValue, cursorPosition, showCommandList, filteredCommands, selectedCommandIndex, isLoading, commandRegistry, onSendMessage, onShowGoodbyeMessage])
 
@@ -256,16 +269,18 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
 
   // 渲染输入框
   const renderInput = useCallback(() => {
-    const beforeCursor = inputValue.slice(0, cursorPosition)
-    const atCursor = inputValue[cursorPosition] || ' '
-    const afterCursor = inputValue.slice(cursorPosition + 1)
+    // 使用 Array.from 正确处理包含中文等多字节字符的字符串
+    const chars = Array.from(inputValue)
+    const beforeCursor = chars.slice(0, cursorPosition).join('')
+    const atCursor = chars[cursorPosition] || ' '
+    const afterCursor = chars.slice(cursorPosition + 1).join('')
 
     return (
       <Box flexDirection="row">
         <Text color="cyan">› </Text>
         <Text>
           {beforeCursor}
-          <Text inverse>{atCursor}</Text>
+          <Text inverse color="white" backgroundColor="cyan">{atCursor}</Text>
           {afterCursor}
         </Text>
         {isLoading && <Text color="yellow"> ⏳</Text>}
