@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Box, useApp } from 'ink'
 import ChatInterface, { type Message } from './ChatInterface'
 import type { CommandRegistry } from '../commands/types'
@@ -13,9 +13,14 @@ export const ChatDemo = ({ commandRegistry }: ChatDemoProps) => {
   const [isLoading, setIsLoading] = useState(false)
   const [aiConfig, setAiConfig] = useState<AIConfig | null>(null)
   const { exit } = useApp()
+  const initRef = useRef(false) // 防止重复初始化
 
   // 初始化 AI Provider
   useEffect(() => {
+    // 防止严格模式下的重复初始化
+    if (initRef.current) return
+    initRef.current = true
+
     const init = async () => {
       const config = await initializeAIProvider()
       if (config) {
@@ -35,7 +40,7 @@ export const ChatDemo = ({ commandRegistry }: ChatDemoProps) => {
   }, [])
 
   // 真实 AI 流式响应
-  const streamAIResponse = async (conversationHistory: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>) => {
+  const streamAIResponse = useCallback(async (conversationHistory: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>) => {
     if (!aiConfig) {
       const errorMessage: Message = {
         id: Date.now().toString(),
@@ -95,9 +100,9 @@ export const ChatDemo = ({ commandRegistry }: ChatDemoProps) => {
     }
 
     setIsLoading(false)
-  }
+  }, [aiConfig])
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = useCallback((content: string) => {
     // 检查是否是未知命令
     if (content.startsWith('/')) {
       // 特殊处理 clear 命令
@@ -141,7 +146,7 @@ export const ChatDemo = ({ commandRegistry }: ChatDemoProps) => {
 
     // 调用真实 AI 响应
     streamAIResponse(conversationHistory)
-  }
+  }, [messages, streamAIResponse])
 
   return (
     <Box flexDirection="column" padding={1}>

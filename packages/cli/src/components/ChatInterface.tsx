@@ -1,6 +1,6 @@
 import { Box, Text, useInput } from 'ink'
 import type { Key } from 'ink'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import type { CommandRegistry } from '../commands'
 import CommandList from './CommandList'
 import { getRandomAsciiLogo } from '../ui/AsciiArt'
@@ -20,6 +20,39 @@ type ChatInterfaceProps = {
   commandRegistry?: CommandRegistry
 }
 
+// 提取 MessageItem 组件并使用 memo 优化
+const MessageItem = memo(({ message }: { message: Message }) => {
+  let displayName = '🤖 AI'
+  let color: 'cyan' | 'green' | 'yellow' = 'green'
+  
+  if (message.role === 'user') {
+    displayName = '👤 You'
+    color = 'cyan'
+  } else if (message.role === 'system') {
+    displayName = '⚙️  System'
+    color = 'yellow'
+  }
+  
+  return (
+    <Box flexDirection="column" marginBottom={1}>
+      <Box>
+        <Text bold color={color}>
+          {displayName}
+        </Text>
+        <Text color="gray" dimColor> • {message.timestamp.toLocaleTimeString()}</Text>
+      </Box>
+      <Box paddingLeft={2}>
+        <Text wrap="wrap">
+          {message.content}
+          {message.isStreaming && <Text color="gray">▋</Text>}
+        </Text>
+      </Box>
+    </Box>
+  )
+})
+
+MessageItem.displayName = 'MessageItem'
+
 export const ChatInterface = ({ onSendMessage, messages, isLoading = false, commandRegistry }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState('')
   const [cursorPosition, setCursorPosition] = useState(0)
@@ -29,6 +62,11 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
   
   // 随机选择一个 ASCII 字符画，只在组件首次加载时选择一次
   const randomAsciiLogo = useMemo(() => getRandomAsciiLogo(), [])
+
+  // 使用 useCallback 优化回调函数
+  const handleCloseCommandList = useCallback(() => {
+    setShowCommandList(false)
+  }, [])
 
   // 搜索和过滤命令
   useEffect(() => {
@@ -69,7 +107,8 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
     }
   }, [inputValue, commandRegistry])
 
-  useInput((input: string, key: Key) => {
+  // 使用 useCallback 优化 input 处理函数
+  const handleInput = useCallback((input: string, key: Key) => {
     // 处理上下键导航命令列表
     if (showCommandList && filteredCommands.length > 0) {
       if (key.upArrow) {
@@ -175,55 +214,14 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
       setInputValue(newValue)
       setCursorPosition(cursorPosition + 1)
     }
-  }, { isActive: true })
+  }, [inputValue, cursorPosition, showCommandList, filteredCommands, selectedCommandIndex, isLoading, commandRegistry, onSendMessage])
 
-  // 根据终端高度动态调整可见消息数量
-  // useEffect(() => {
-  //   if (stdout.rows) {
-  //     // 预留空间给标题、输入框和边框
-  //     const availableRows = stdout.rows - 10
-  //     const messagesPerRow = 4 // 每条消息大约占用的行数
-  //     const maxVisible = Math.max(5, Math.floor(availableRows / messagesPerRow))
-  //     setVisibleMessageCount(prev => {
-  //       // 只在值真正改变时才更新，避免不必要的重新渲染
-  //       return prev !== maxVisible ? maxVisible : prev
-  //     })
-  //   }
-  // }, [stdout.rows])
+  useInput(handleInput, { isActive: true })
 
-  // 渲染单条消息
-  const renderMessage = (message: Message) => {
-    let displayName = '🤖 AI'
-    let color: 'cyan' | 'green' | 'yellow' = 'green'
-    
-    if (message.role === 'user') {
-      displayName = '👤 You'
-      color = 'cyan'
-    } else if (message.role === 'system') {
-      displayName = '⚙️  System'
-      color = 'yellow'
-    }
-    
-    return (
-      <Box key={message.id} flexDirection="column" marginBottom={1}>
-        <Box>
-          <Text bold color={color}>
-            {displayName}
-          </Text>
-          <Text color="gray" dimColor> • {message.timestamp.toLocaleTimeString()}</Text>
-        </Box>
-        <Box paddingLeft={2}>
-          <Text wrap="wrap">
-            {message.content}
-            {message.isStreaming && <Text color="gray">▋</Text>}
-          </Text>
-        </Box>
-      </Box>
-    )
-  }
+  // 渲染单条消息（已提取为 MessageItem 组件）
 
   // 渲染输入框
-  const renderInput = () => {
+  const renderInput = useCallback(() => {
     const beforeCursor = inputValue.slice(0, cursorPosition)
     const atCursor = inputValue[cursorPosition] || ' '
     const afterCursor = inputValue.slice(cursorPosition + 1)
@@ -239,7 +237,7 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
         {isLoading && <Text color="yellow"> ⏳</Text>}
       </Box>
     )
-  }
+  }, [inputValue, cursorPosition, isLoading])
 
   return (
     <Box flexDirection="column">
@@ -267,7 +265,9 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
         ) : (
           <Box flexDirection="column">
             {/* 渲染所有消息 */}
-            {messages.map(renderMessage)}
+            {messages.map(message => (
+              <MessageItem key={message.id} message={message} />
+            ))}
           </Box>
         )}
       </Box>

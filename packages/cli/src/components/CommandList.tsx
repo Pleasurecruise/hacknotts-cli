@@ -1,4 +1,5 @@
 import { Box, Text } from 'ink'
+import { memo } from 'react'
 import type { Command } from '../commands/types'
 
 type CommandListProps = {
@@ -8,7 +9,7 @@ type CommandListProps = {
   searchQuery?: string
 }
 
-export const CommandList = ({ commands, selectedIndex = 0, searchQuery = '' }: CommandListProps) => {
+export const CommandList = memo(({ commands, selectedIndex = 0, searchQuery = '' }: CommandListProps) => {
   if (commands.length === 0) {
     return (
       <Box 
@@ -74,6 +75,8 @@ export const CommandList = ({ commands, selectedIndex = 0, searchQuery = '' }: C
       </Box>
     </Box>
   )
-}
+})
+
+CommandList.displayName = 'CommandList'
 
 export default CommandList
