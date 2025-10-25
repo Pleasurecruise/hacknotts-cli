@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "AI usage project for HackNotts 2025",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.12.0"
   },
   "type": "module",
   "workspaces": [
