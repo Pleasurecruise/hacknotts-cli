@@ -177,7 +177,7 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
       setInputValue(newValue)
       setCursorPosition(cursorPosition + 1)
     }
-  })
+  }, { isActive: true })
 
   // 根据终端高度动态调整可见消息数量
   useEffect(() => {
@@ -186,7 +186,10 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
       const availableRows = stdout.rows - 10
       const messagesPerRow = 4 // 每条消息大约占用的行数
       const maxVisible = Math.max(5, Math.floor(availableRows / messagesPerRow))
-      setVisibleMessageCount(maxVisible)
+      setVisibleMessageCount(prev => {
+        // 只在值真正改变时才更新，避免不必要的重新渲染
+        return prev !== maxVisible ? maxVisible : prev
+      })
     }
   }, [stdout.rows])
 

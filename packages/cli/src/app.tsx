@@ -87,7 +87,7 @@ export const App = () => {
     if (key.escape) {
       exit()
     }
-  })
+  }, { isActive: viewMode === 'providers' })
 
   const statuses: ProviderStatus[] = useMemo(() => {
     const active = new Set(initialized)
