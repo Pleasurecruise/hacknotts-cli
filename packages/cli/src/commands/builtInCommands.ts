@@ -1,4 +1,6 @@
 import type { Command } from './types'
+import { GOODBYE_MESSAGES, EXIT_DELAY } from '../utils/constants'
+import { randomChoice } from '../utils/helpers'
 
 export const createProviderCommand = (onExecute: () => void): Command => ({
   name: 'provider',
@@ -33,25 +35,14 @@ export const createExitCommand = (onExecute: () => void, showGoodbyeMessage?: (m
   description: '👋 Exit the application (see you at HackNotts!)',
   aliases: ['quit', 'q'],
   execute: () => {
-    // 显示告别消息 - HackNotts themed!
+    // 显示随机告别消息
     if (showGoodbyeMessage) {
-      const goodbyeMessages = [
-        '👋 Goodbye! Thanks for using HackNotts CLI! Keep hacking with playful cleverness!',
-        '✨ See you at HackNotts 2025! Build something amazing!',
-        '🌟 Farewell, hacker! May your code compile and your ideas flourish!',
-        '💫 Until next time! Remember: every expert was once a beginner.',
-        '🎉 Happy coding! See you at the University of Nottingham!',
-        '🚀 Off you go! Time to turn those ideas into reality!',
-        '🏆 Keep learning, keep building! HackNotts believes in you!',
-        '💡 Goodbye! Don\'t forget: code is poetry, and you\'re the poet!'
-      ]
-      const randomMessage = goodbyeMessages[Math.floor(Math.random() * goodbyeMessages.length)]
-      showGoodbyeMessage(randomMessage)
+      showGoodbyeMessage(randomChoice(GOODBYE_MESSAGES))
     }
 
     // 延迟退出以显示消息
     setTimeout(() => {
       onExecute()
-    }, 800)
+    }, EXIT_DELAY)
   }
 })

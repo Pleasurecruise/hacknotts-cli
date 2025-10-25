@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Box, useApp } from 'ink'
+import { Box } from 'ink'
 import ChatInterface, { type Message } from './ChatInterface'
 import type { CommandRegistry } from '../commands/types'
 import { initializeAIProvider, streamAIChat, type AIConfig } from '../services/aiService'
+import { createMessage, isCommand, parseCommand } from '../utils/helpers'
 
 type ChatDemoProps = {
   commandRegistry?: CommandRegistry
@@ -14,7 +15,6 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [aiConfig, setAiConfig] = useState<AIConfig | null>(null)
-  const { exit } = useApp()
   const initRef = useRef(false) // 防止重复初始化
 
   // 通知父组件消息状态变化
@@ -34,13 +34,9 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
         setAiConfig(config)
       } else {
         // 如果初始化失败，显示错误消息
-        const errorMessage: Message = {
-          id: Date.now().toString(),
-          role: 'system',
-          content: 'Failed to initialize AI provider. Please check your environment variables (.env file) and make sure you have set a valid API key.',
-          timestamp: new Date(),
-        }
-        setMessages([errorMessage])
+        setMessages([createMessage('system', 
+          'Failed to initialize AI provider. Please check your environment variables (.env file) and make sure you have set a valid API key.'
+        )])
       }
     }
     init()
@@ -49,27 +45,15 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
   // 真实 AI 流式响应
   const streamAIResponse = useCallback(async (conversationHistory: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>) => {
     if (!aiConfig) {
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        role: 'system',
-        content: 'AI provider is not initialized. Cannot generate response.',
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, errorMessage])
+      setMessages((prev) => [...prev, createMessage('system', 
+        'AI provider is not initialized. Cannot generate response.'
+      )])
       setIsLoading(false)
       return
     }
 
-    const aiMessageId = Date.now().toString() + '-ai'
-
-    // 创建初始的 AI 消息
-    const aiMessage: Message = {
-      id: aiMessageId,
-      role: 'assistant',
-      content: '',
-      timestamp: new Date(),
-      isStreaming: true,
-    }
+    const aiMessage = createMessage('assistant', '', { isStreaming: true })
+    const aiMessageId = aiMessage.id
 
     setMessages((prev) => [...prev, aiMessage])
 
@@ -109,13 +93,9 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
       })
     } catch (error) {
       // 处理错误
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        role: 'system',
-        content: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, errorMessage])
+      setMessages((prev) => [...prev, createMessage('system',
+        `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`
+      )])
     }
 
     setIsLoading(false)
@@ -124,43 +104,27 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages 
   const handleSendMessage = useCallback((content: string, showGoodbyeMessage?: string) => {
     // 如果有告别消息，显示它
     if (showGoodbyeMessage) {
-      const goodbyeMsg: Message = {
-        id: Date.now().toString(),
-        role: 'system',
-        content: showGoodbyeMessage,
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, goodbyeMsg])
+      setMessages((prev) => [...prev, createMessage('system', showGoodbyeMessage)])
       return
     }
     
     // 检查是否是未知命令
-    if (content.startsWith('/')) {
+    if (isCommand(content)) {
       // 特殊处理 clear 命令
-      if (content.trim() === '/clear') {
+      const { command } = parseCommand(content)
+      if (command === 'clear') {
         setMessages([])
         return
       }
 
-      const systemMessage: Message = {
-        id: Date.now().toString(),
-        role: 'system',
-        content: `Unknown command: ${content}. Type / to see available commands.`,
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, systemMessage])
+      setMessages((prev) => [...prev, createMessage('system', 
+        `Unknown command: ${content}. Type / to see available commands.`
+      )])
       return
     }
 
     // 添加用户消息
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content,
-      timestamp: new Date(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
+    setMessages((prev) => [...prev, createMessage('user', content)])
     setIsLoading(true)
 
     // 构建对话历史（包含新消息）
