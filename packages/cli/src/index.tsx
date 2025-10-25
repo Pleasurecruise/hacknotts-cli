@@ -7,8 +7,14 @@ import App from './app'
 
 export { App } from './app'
 
+// 导出 render instance 以便在应用中使用 clear() 方法
+let renderInstance: ReturnType<typeof render> | null = null
+
+export const getRenderInstance = () => renderInstance
+
 export const runCli = async (): Promise<void> => {
-  await render(<App />).waitUntilExit()
+  renderInstance = render(<App />)
+  await renderInstance.waitUntilExit()
 }
 
 const isDirectExecution = (() => {
