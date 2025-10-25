@@ -1,7 +1,7 @@
 import { Box, Text, useInput, useStdout } from 'ink'
 import type { Key } from 'ink'
 import { useState, useEffect, useMemo } from 'react'
-import type { CommandRegistry } from '../commands/types'
+import type { CommandRegistry } from '../commands'
 import CommandList from './CommandList'
 import { getRandomAsciiLogo } from '../ui/AsciiArt'
 

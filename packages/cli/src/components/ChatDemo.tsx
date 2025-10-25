@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Box, useApp } from 'ink'
 import ChatInterface, { type Message } from './ChatInterface'
 import type { CommandRegistry } from '../commands/types'
+import { initializeAIProvider, streamAIChat, type AIConfig } from '../services/aiService'
 
 type ChatDemoProps = {
   commandRegistry?: CommandRegistry
@@ -10,19 +11,43 @@ type ChatDemoProps = {
 export const ChatDemo = ({ commandRegistry }: ChatDemoProps) => {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [aiConfig, setAiConfig] = useState<AIConfig | null>(null)
   const { exit } = useApp()
 
-  // 模拟 AI 流式响应
-  const simulateAIResponse = async (userMessage: string) => {
-    const responses = [
-      "Hello! I'm an AI assistant. How can I help you today?",
-      "That's an interesting question! Let me think about it...",
-      "I understand. Based on what you've told me, here's what I think:",
-      "Great question! Here's my detailed response about that topic.",
-      "I see what you're asking. Let me break this down for you step by step.",
-    ]
+  // 初始化 AI Provider
+  useEffect(() => {
+    const init = async () => {
+      const config = await initializeAIProvider()
+      if (config) {
+        setAiConfig(config)
+      } else {
+        // 如果初始化失败，显示错误消息
+        const errorMessage: Message = {
+          id: Date.now().toString(),
+          role: 'system',
+          content: 'Failed to initialize AI provider. Please check your environment variables (.env file) and make sure you have set a valid API key.',
+          timestamp: new Date(),
+        }
+        setMessages([errorMessage])
+      }
+    }
+    init()
+  }, [])
 
-    const response = responses[Math.floor(Math.random() * responses.length)]
+  // 真实 AI 流式响应
+  const streamAIResponse = async (conversationHistory: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>) => {
+    if (!aiConfig) {
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        role: 'system',
+        content: 'AI provider is not initialized. Cannot generate response.',
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, errorMessage])
+      setIsLoading(false)
+      return
+    }
+
     const aiMessageId = Date.now().toString() + '-ai'
 
     // 创建初始的 AI 消息
@@ -36,20 +61,37 @@ export const ChatDemo = ({ commandRegistry }: ChatDemoProps) => {
 
     setMessages((prev) => [...prev, aiMessage])
 
-    // 模拟流式输出
-    const words = response.split(' ')
-    for (let i = 0; i < words.length; i++) {
-      await new Promise((resolve) => setTimeout(resolve, 100 + Math.random() * 100))
-      
+    try {
+      // 使用真实的 AI 流式响应
+      for await (const chunk of streamAIChat(conversationHistory, aiConfig)) {
+        setMessages((prev) => {
+          const updated = [...prev]
+          const lastMessage = updated[updated.length - 1]
+          if (lastMessage && lastMessage.id === aiMessageId) {
+            lastMessage.content += chunk
+          }
+          return updated
+        })
+      }
+
+      // 流式完成，更新状态
       setMessages((prev) => {
         const updated = [...prev]
         const lastMessage = updated[updated.length - 1]
         if (lastMessage && lastMessage.id === aiMessageId) {
-          lastMessage.content = words.slice(0, i + 1).join(' ')
-          lastMessage.isStreaming = i < words.length - 1
+          lastMessage.isStreaming = false
         }
         return updated
       })
+    } catch (error) {
+      // 处理错误
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        role: 'system',
+        content: `Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, errorMessage])
     }
 
     setIsLoading(false)
@@ -63,7 +105,7 @@ export const ChatDemo = ({ commandRegistry }: ChatDemoProps) => {
         setMessages([])
         return
       }
-      
+
       const systemMessage: Message = {
         id: Date.now().toString(),
         role: 'system',
@@ -73,7 +115,7 @@ export const ChatDemo = ({ commandRegistry }: ChatDemoProps) => {
       setMessages((prev) => [...prev, systemMessage])
       return
     }
-    
+
     // 添加用户消息
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -85,10 +127,20 @@ export const ChatDemo = ({ commandRegistry }: ChatDemoProps) => {
     setMessages((prev) => [...prev, userMessage])
     setIsLoading(true)
 
-    // 模拟 AI 响应
-    setTimeout(() => {
-      simulateAIResponse(content)
-    }, 500)
+    // 构建对话历史（包含新消息）
+    const conversationHistory = [
+      ...messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      })),
+      {
+        role: 'user' as const,
+        content
+      }
+    ]
+
+    // 调用真实 AI 响应
+    streamAIResponse(conversationHistory)
   }
 
   return (
