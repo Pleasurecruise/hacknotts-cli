@@ -97,11 +97,6 @@ export const App = () => {
       return
     }
 
-    if (key.escape) {
-      requestExit()
-      return
-    }
-
     if (key.ctrl && input === 'c') {
       // If AI is responding, let ChatSession handle it (don't trigger exit logic)
       if (isAIResponding) {

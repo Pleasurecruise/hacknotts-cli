@@ -93,7 +93,7 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
   // Show Ctrl+C warning in status bar
   useEffect(() => {
     if (ctrlCPressed) {
-      showWarning('⚠️  Press Ctrl+C again to exit, or any other key to cancel')
+      showWarning('Press Ctrl+C again to exit, or any other key to cancel')
     }
   }, [ctrlCPressed, showWarning])
 
