@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Box, useInput } from 'ink'
 import type { Key } from 'ink'
+import { resolve } from 'node:path'
+import { existsSync } from 'node:fs'
 import type { ProviderId } from '@cherrystudio/ai-core/provider'
 import ChatInterface, { type Message, type StatusBarController } from './ChatInterface'
 import type { CommandRegistry } from '../commands/types'
@@ -18,6 +20,8 @@ type ChatSessionProps = {
   onRegisterProviderSwitcher?: (handler: ((providerId: ProviderId) => boolean) | null) => void
   onRegisterMessagesGetter?: (handler: (() => Message[]) | null) => void
   onRegisterStatusBarController?: (controller: StatusBarController | null) => void
+  onRegisterModelSwitcher?: (handler: ((modelName?: string) => void) | null) => void
+  onRegisterCdHandler?: (handler: ((directory?: string) => void) | null) => void
   ctrlCPressed?: boolean
   onLoadingChange?: (isLoading: boolean) => void
   // Provider view props
@@ -41,6 +45,8 @@ export const ChatSession = ({
   onRegisterProviderSwitcher,
   onRegisterMessagesGetter,
   onRegisterStatusBarController,
+  onRegisterModelSwitcher,
+  onRegisterCdHandler,
   ctrlCPressed = false,
   onLoadingChange,
   showProviderView = false,
@@ -58,6 +64,8 @@ export const ChatSession = ({
   const [isLoading, setIsLoading] = useState(false)
   const [aiConfigs, setAiConfigs] = useState<AIConfig[]>([])
   const [currentConfig, setCurrentConfig] = useState<AIConfig | null>(null)
+  const [temporaryModel, setTemporaryModel] = useState<string | null>(null)
+  const [currentDirectory, setCurrentDirectory] = useState<string>(process.cwd())
   const initRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
   const statusBarRef = useRef<StatusBarController | null>(null)
@@ -169,8 +177,13 @@ export const ChatSession = ({
 
     setMessages(prev => [...prev, aiMessage])
 
+    // 使用临时模型或默认模型
+    const effectiveConfig = temporaryModel 
+      ? { ...currentConfig, model: temporaryModel }
+      : currentConfig
+
     try {
-      for await (const chunk of streamAIChat(conversationHistory, currentConfig)) {
+      for await (const chunk of streamAIChat(conversationHistory, effectiveConfig)) {
         if (abortController.signal.aborted) {
           break
         }
@@ -221,7 +234,7 @@ export const ChatSession = ({
       abortControllerRef.current = null
       setIsLoading(false)
     }
-  }, [currentConfig])
+  }, [currentConfig, temporaryModel])
 
   const switchProvider = useCallback((providerId: ProviderId) => {
     const targetConfig = aiConfigs.find(c => c.providerId === providerId)
@@ -232,6 +245,7 @@ export const ChatSession = ({
     }
 
     setCurrentConfig(targetConfig)
+    setTemporaryModel(null) // 清除临时模型
     setDefaultProvider(providerId, targetConfig.model)
 
     statusBarRef.current?.showInfo(
@@ -245,6 +259,59 @@ export const ChatSession = ({
     return true
   }, [aiConfigs, onProviderSwitch])
 
+  const switchModel = useCallback((modelName?: string) => {
+    if (!currentConfig) {
+      statusBarRef.current?.showError('No provider is currently active. Please select a provider first.')
+      return
+    }
+
+    if (!modelName) {
+      // 如果没有提供模型名称，显示当前模型信息
+      const displayModel = temporaryModel || currentConfig.model
+      const isTemp = temporaryModel !== null
+      statusBarRef.current?.showInfo(
+        `Current model: ${displayModel} (${currentConfig.providerId})${isTemp ? ' [Temporary]' : ''}`
+      )
+      return
+    }
+
+    // 设置临时模型
+    setTemporaryModel(modelName)
+    statusBarRef.current?.showSuccess(
+      `Temporarily switched to model: ${modelName} (${currentConfig.providerId})`,
+      0
+    )
+  }, [currentConfig, temporaryModel])
+
+  const handleCd = useCallback((directory?: string) => {
+    if (!directory) {
+      // 如果没有提供目录，显示当前工作目录
+      statusBarRef.current?.showInfo(`Current working directory: ${currentDirectory}`)
+      return
+    }
+
+    try {
+      // 解析路径（支持相对路径和绝对路径）
+      const targetPath = resolve(currentDirectory, directory)
+
+      // 检查目录是否存在
+      if (!existsSync(targetPath)) {
+        statusBarRef.current?.showError(`Directory does not exist: ${targetPath}`)
+        return
+      }
+
+      // 更新当前目录
+      setCurrentDirectory(targetPath)
+      process.chdir(targetPath)
+      
+      statusBarRef.current?.showSuccess(`Changed directory to: ${targetPath}`, 0)
+    } catch (error) {
+      statusBarRef.current?.showError(
+        error instanceof Error ? error.message : 'Failed to change directory'
+      )
+    }
+  }, [currentDirectory])
+
   useEffect(() => {
     if (!onRegisterProviderSwitcher) {
       return
@@ -255,6 +322,28 @@ export const ChatSession = ({
       onRegisterProviderSwitcher(null)
     }
   }, [onRegisterProviderSwitcher, switchProvider])
+
+  useEffect(() => {
+    if (!onRegisterModelSwitcher) {
+      return
+    }
+
+    onRegisterModelSwitcher(switchModel)
+    return () => {
+      onRegisterModelSwitcher(null)
+    }
+  }, [onRegisterModelSwitcher, switchModel])
+
+  useEffect(() => {
+    if (!onRegisterCdHandler) {
+      return
+    }
+
+    onRegisterCdHandler(handleCd)
+    return () => {
+      onRegisterCdHandler(null)
+    }
+  }, [onRegisterCdHandler, handleCd])
 
   const handleSendMessage = useCallback((content: string) => {
     if (isCommand(content)) {
@@ -306,7 +395,7 @@ export const ChatSession = ({
         isLoading={isLoading}
         commandRegistry={commandRegistry}
         provider={currentConfig?.providerId}
-        model={currentConfig?.model}
+        model={temporaryModel || currentConfig?.model}
         onStatusBarReady={handleStatusBarReady}
         ctrlCPressed={ctrlCPressed}
         showProviderView={showProviderView}

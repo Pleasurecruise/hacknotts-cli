@@ -12,6 +12,8 @@ export type RegisterClearHandler = (handler: (() => void) | null) => void
 export type RegisterProviderSwitcher = (handler: ((providerId: ProviderId) => boolean) | null) => void
 export type RegisterMessagesGetter = (handler: (() => Message[]) | null) => void
 export type RegisterStatusBarController = (controller: StatusBarController | null) => void
+export type RegisterModelSwitcher = (handler: ((modelName?: string) => void) | null) => void
+export type RegisterCdHandler = (handler: ((directory?: string) => void) | null) => void
 
 type ChatViewProps = {
   commandRegistry: CommandRegistry
@@ -21,6 +23,8 @@ type ChatViewProps = {
   registerProviderSwitcher: RegisterProviderSwitcher
   registerMessagesGetter: RegisterMessagesGetter
   registerStatusBarController: RegisterStatusBarController
+  registerModelSwitcher: RegisterModelSwitcher
+  registerCdHandler: RegisterCdHandler
   onLoadingChange?: (isLoading: boolean) => void
   // Provider dashboard props
   showProviderDashboard?: boolean
@@ -43,6 +47,8 @@ export const ChatView = ({
   registerProviderSwitcher,
   registerMessagesGetter,
   registerStatusBarController,
+  registerModelSwitcher,
+  registerCdHandler,
   onLoadingChange,
   showProviderDashboard = false,
   providerStatuses = [],
@@ -74,6 +80,8 @@ export const ChatView = ({
         onRegisterProviderSwitcher={registerProviderSwitcher}
         onRegisterMessagesGetter={registerMessagesGetter}
         onRegisterStatusBarController={registerStatusBarController}
+        onRegisterModelSwitcher={registerModelSwitcher}
+        onRegisterCdHandler={registerCdHandler}
         ctrlCPressed={ctrlCPressed}
         onLoadingChange={onLoadingChange}
         showProviderView={showProviderDashboard}

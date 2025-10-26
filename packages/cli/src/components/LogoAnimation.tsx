@@ -7,6 +7,7 @@ import {
   getAnimationFrameString,
   getTotalSteps,
 } from '../ui/LogoAnimation.js';
+import AnimatedGradient from './AnimatedGradient.js';
 
 interface LogoAnimationProps {
   /**
@@ -78,7 +79,9 @@ export const LogoAnimation: React.FC<LogoAnimationProps> = ({
 
   return (
     <Box flexDirection="column">
-      <Text color="cyan">{currentFrame}</Text>
+      <AnimatedGradient>
+        {currentFrame}
+      </AnimatedGradient>
     </Box>
   );
 };

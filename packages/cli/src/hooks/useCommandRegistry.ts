@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { createClearCommand, createCommandRegistry, createExitCommand, createHelpCommand, createProviderCommand, createExportCommand } from '../commands'
+import { createClearCommand, createCommandRegistry, createExitCommand, createHelpCommand, createProviderCommand, createExportCommand, createModelCommand, createCdCommand } from '../commands'
 import type { CommandRegistry } from '../commands'
 import type { Message, StatusBarController } from '../components/ChatInterface'
 
@@ -10,6 +10,8 @@ export type UseCommandRegistryOptions = {
   getClearHandler: () => (() => void) | undefined
   getMessagesHandler: () => (() => Message[]) | undefined
   getStatusBarController: () => StatusBarController | undefined
+  getModelSwitcher?: () => ((modelName?: string) => void) | undefined
+  getCdHandler?: () => ((directory?: string) => void) | undefined
 }
 
 export const useCommandRegistry = ({
@@ -18,7 +20,9 @@ export const useCommandRegistry = ({
   onShowGoodbyeMessage,
   getClearHandler,
   getMessagesHandler,
-  getStatusBarController
+  getStatusBarController,
+  getModelSwitcher,
+  getCdHandler
 }: UseCommandRegistryOptions): CommandRegistry => {
   return useMemo(() => {
     const registry = createCommandRegistry()
@@ -56,6 +60,40 @@ export const useCommandRegistry = ({
       }
     ))
 
+    // 创建模型切换命令
+    registry.registerCommand(createModelCommand(
+      (modelName) => {
+        const switcher = getModelSwitcher?.()
+        if (switcher) {
+          switcher(modelName)
+        }
+      },
+      (message) => {
+        // Error message
+        const statusBar = getStatusBarController()
+        if (statusBar) {
+          statusBar.showError(message)
+        }
+      }
+    ))
+
+    // 创建工作目录切换命令
+    registry.registerCommand(createCdCommand(
+      (directory) => {
+        const handler = getCdHandler?.()
+        if (handler) {
+          handler(directory)
+        }
+      },
+      (message) => {
+        // Error message
+        const statusBar = getStatusBarController()
+        if (statusBar) {
+          statusBar.showError(message)
+        }
+      }
+    ))
+
     return registry
-  }, [getClearHandler, getMessagesHandler, getStatusBarController, onRequestExit, onShowGoodbyeMessage, onShowProviders])
+  }, [getClearHandler, getMessagesHandler, getStatusBarController, getModelSwitcher, getCdHandler, onRequestExit, onShowGoodbyeMessage, onShowProviders])
 }

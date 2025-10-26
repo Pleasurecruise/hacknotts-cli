@@ -42,6 +42,8 @@ export const App = () => {
   const providerSwitcherRef = useRef<((providerId: ProviderId) => boolean) | null>(null)
   const messagesGetterRef = useRef<(() => Message[]) | null>(null)
   const statusBarControllerRef = useRef<StatusBarController | null>(null)
+  const modelSwitcherRef = useRef<((modelName?: string) => void) | null>(null)
+  const cdHandlerRef = useRef<((directory?: string) => void) | null>(null)
   const randomAsciiLogo = useMemo(() => getRandomAsciiLogo(), [])
 
   const requestExit = useCallback((message?: string) => {
@@ -74,11 +76,23 @@ export const App = () => {
     statusBarControllerRef.current = controller ?? null
   }, [])
 
+  const registerModelSwitcher = useCallback((handler: ((modelName?: string) => void) | null) => {
+    modelSwitcherRef.current = handler ?? null
+  }, [])
+
+  const registerCdHandler = useCallback((handler: ((directory?: string) => void) | null) => {
+    cdHandlerRef.current = handler ?? null
+  }, [])
+
   const getClearHandler = useCallback(() => clearChatRef.current ?? undefined, [])
 
   const getMessagesHandler = useCallback(() => messagesGetterRef.current ?? undefined, [])
 
   const getStatusBarController = useCallback(() => statusBarControllerRef.current ?? undefined, [])
+
+  const getModelSwitcher = useCallback(() => modelSwitcherRef.current ?? undefined, [])
+
+  const getCdHandler = useCallback(() => cdHandlerRef.current ?? undefined, [])
 
   const commandRegistry = useCommandRegistry({
     onShowProviders: () => setShowProviderDashboard(true),
@@ -86,7 +100,9 @@ export const App = () => {
     onShowGoodbyeMessage: handleGoodbyeMessage,
     getClearHandler,
     getMessagesHandler,
-    getStatusBarController
+    getStatusBarController,
+    getModelSwitcher,
+    getCdHandler
   })
 
   const handleProviderSwitch = useCallback((providerId: ProviderId, configs: AIConfig[]) => {
@@ -159,6 +175,8 @@ export const App = () => {
       registerProviderSwitcher={registerProviderSwitcher}
       registerMessagesGetter={registerMessagesGetter}
       registerStatusBarController={registerStatusBarController}
+      registerModelSwitcher={registerModelSwitcher}
+      registerCdHandler={registerCdHandler}
       onLoadingChange={setIsAIResponding}
       showProviderDashboard={showProviderDashboard}
       providerStatuses={statuses}

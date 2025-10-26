@@ -83,3 +83,55 @@ export const createExportCommand = (
     }
   }
 })
+
+export const createModelCommand = (
+  onExecute: (modelName?: string) => void,
+  onError?: (message: string) => void
+): Command => ({
+  name: 'model',
+  description: '🤖 Switch to a specific model temporarily (usage: /model [model-name])',
+  aliases: ['m'],
+  execute: (args: string[]) => {
+    if (args.length === 0) {
+      // 如果没有参数，显示当前模型信息
+      onExecute()
+      return
+    }
+    
+    const modelName = args.join(' ').trim()
+    if (!modelName) {
+      if (onError) {
+        onError('Please specify a model name. Usage: /model <model-name>')
+      }
+      return
+    }
+    
+    onExecute(modelName)
+  }
+})
+
+export const createCdCommand = (
+  onExecute: (directory?: string) => void,
+  onError?: (message: string) => void
+): Command => ({
+  name: 'cd',
+  description: '📁 Change working directory temporarily (usage: /cd [path])',
+  aliases: ['chdir'],
+  execute: (args: string[]) => {
+    if (args.length === 0) {
+      // 如果没有参数，显示当前工作目录
+      onExecute()
+      return
+    }
+    
+    const directory = args.join(' ').trim()
+    if (!directory) {
+      if (onError) {
+        onError('Please specify a directory path. Usage: /cd <path>')
+      }
+      return
+    }
+    
+    onExecute(directory)
+  }
+})
