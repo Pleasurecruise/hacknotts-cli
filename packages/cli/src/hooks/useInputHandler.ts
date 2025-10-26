@@ -22,6 +22,10 @@ interface UseInputHandlerProps {
   isLoading: boolean
   commandRegistry?: CommandRegistry
   onSendMessage: (message: string) => void
+  // 输入历史相关
+  onNavigateHistory?: (direction: 'up' | 'down', currentInput: string) => string | null
+  onResetHistoryNavigation?: () => void
+  onMessageSent?: (message: string) => void
 }
 
 export function useInputHandler({
@@ -38,7 +42,10 @@ export function useInputHandler({
   setScrollOffset,
   isLoading,
   commandRegistry,
-  onSendMessage
+  onSendMessage,
+  onNavigateHistory,
+  onResetHistoryNavigation,
+  onMessageSent
 }: UseInputHandlerProps) {
   return useCallback((input: string, key: Key) => {
     // 计算可见区域的高度
@@ -109,6 +116,27 @@ export function useInputHandler({
       }
     }
 
+    // 输入历史导航（仅当命令列表未显示时）
+    if (!showCommandList && onNavigateHistory) {
+      if (key.upArrow) {
+        const historyItem = onNavigateHistory('up', inputValue)
+        if (historyItem !== null) {
+          setInputValue(historyItem)
+          setCursorPosition(StringHelper.getLength(historyItem))
+        }
+        return
+      }
+      
+      if (key.downArrow) {
+        const historyItem = onNavigateHistory('down', inputValue)
+        if (historyItem !== null) {
+          setInputValue(historyItem)
+          setCursorPosition(StringHelper.getLength(historyItem))
+        }
+        return
+      }
+    }
+
     // Backspace key
     if (key.backspace || key.delete) {
       if (cursorPosition > 0) {
@@ -146,6 +174,11 @@ export function useInputHandler({
       if (inputValue.trim() && !isLoading) {
         const trimmedInput = inputValue.trim()
         
+        // 添加到历史记录
+        if (onMessageSent) {
+          onMessageSent(trimmedInput)
+        }
+        
         // Check if it's a command
         if (trimmedInput.startsWith('/') && commandRegistry) {
           const { command: commandName } = parseCommand(trimmedInput)
@@ -170,6 +203,11 @@ export function useInputHandler({
 
     // Regular character input
     if (!key.return && !key.escape && !key.ctrl && !key.meta && !key.tab && input) {
+      // 当用户开始输入新内容时，重置历史导航
+      if (onResetHistoryNavigation) {
+        onResetHistoryNavigation()
+      }
+      
       const newValue = StringHelper.insertAt(inputValue, cursorPosition, input)
       setInputValue(newValue)
       setCursorPosition(cursorPosition + StringHelper.getLength(input))
@@ -188,6 +226,9 @@ export function useInputHandler({
     setCursorPosition,
     setShowCommandList,
     setSelectedCommandIndex,
-    setScrollOffset
+    setScrollOffset,
+    onNavigateHistory,
+    onResetHistoryNavigation,
+    onMessageSent
   ])
 }

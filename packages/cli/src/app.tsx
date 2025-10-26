@@ -6,9 +6,10 @@ import { getSupportedProviders } from '@cherrystudio/ai-core/provider'
 import { getRandomAsciiLogo, robotMascot } from './ui/AsciiArt'
 import AnimationContainer from './components/AnimationContainer'
 import type { AIConfig } from './services/aiService'
+import type { Message, StatusBarController } from './components/ChatInterface'
 import { useProviderState } from './hooks/useProviderState'
 import { useCommandRegistry } from './hooks/useCommandRegistry'
-import { ChatView, type RegisterClearHandler, type RegisterProviderSwitcher } from './views/ChatView'
+import { ChatView, type RegisterClearHandler, type RegisterProviderSwitcher, type RegisterMessagesGetter, type RegisterStatusBarController } from './views/ChatView'
 import { ProviderDashboard } from './views/ProviderDashboard'
 import { GOODBYE_MESSAGES } from './utils/constants'
 import { randomChoice } from './utils/helpers'
@@ -36,9 +37,10 @@ export const App = () => {
   const [goodbyeMessage, setGoodbyeMessage] = useState('')
   const [ctrlCPressed, setCtrlCPressed] = useState(false)
   const [isAIResponding, setIsAIResponding] = useState(false)
-  const ctrlCResetTimeout = useRef<NodeJS.Timeout | null>(null)
   const clearChatRef = useRef<(() => void) | null>(null)
   const providerSwitcherRef = useRef<((providerId: ProviderId) => boolean) | null>(null)
+  const messagesGetterRef = useRef<(() => Message[]) | null>(null)
+  const statusBarControllerRef = useRef<StatusBarController | null>(null)
   const randomAsciiLogo = useMemo(() => getRandomAsciiLogo(), [])
 
   const requestExit = useCallback((message?: string) => {
@@ -63,13 +65,27 @@ export const App = () => {
     providerSwitcherRef.current = handler ?? null
   }, [])
 
+  const registerMessagesGetter = useCallback<RegisterMessagesGetter>((handler) => {
+    messagesGetterRef.current = handler ?? null
+  }, [])
+
+  const registerStatusBarController = useCallback<RegisterStatusBarController>((controller) => {
+    statusBarControllerRef.current = controller ?? null
+  }, [])
+
   const getClearHandler = useCallback(() => clearChatRef.current ?? undefined, [])
+
+  const getMessagesHandler = useCallback(() => messagesGetterRef.current ?? undefined, [])
+
+  const getStatusBarController = useCallback(() => statusBarControllerRef.current ?? undefined, [])
 
   const commandRegistry = useCommandRegistry({
     onShowProviders: () => setViewMode('providers'),
     onRequestExit: () => requestExit(),
     onShowGoodbyeMessage: handleGoodbyeMessage,
-    getClearHandler
+    getClearHandler,
+    getMessagesHandler,
+    getStatusBarController
   })
 
   const handleProviderSwitch = useCallback((providerId: ProviderId, configs: AIConfig[]) => {
@@ -83,14 +99,6 @@ export const App = () => {
   const handleShutdownComplete = useCallback(() => {
     exit()
   }, [exit])
-
-  useEffect(() => {
-    return () => {
-      if (ctrlCResetTimeout.current) {
-        clearTimeout(ctrlCResetTimeout.current)
-      }
-    }
-  }, [])
 
   useInput((input: string, key: Key) => {
     if (appState !== 'running') {
@@ -107,13 +115,6 @@ export const App = () => {
         requestExit()
       } else {
         setCtrlCPressed(true)
-        if (ctrlCResetTimeout.current) {
-          clearTimeout(ctrlCResetTimeout.current)
-        }
-        ctrlCResetTimeout.current = setTimeout(() => {
-          setCtrlCPressed(false)
-          ctrlCResetTimeout.current = null
-        }, 3000)
       }
       return
     }
@@ -121,10 +122,6 @@ export const App = () => {
     // Any other key press clears the Ctrl+C warning
     if (ctrlCPressed) {
       setCtrlCPressed(false)
-      if (ctrlCResetTimeout.current) {
-        clearTimeout(ctrlCResetTimeout.current)
-        ctrlCResetTimeout.current = null
-      }
     }
 
     if (viewMode === 'providers') {
@@ -201,6 +198,8 @@ export const App = () => {
       onProviderSwitch={handleProviderSwitch}
       registerClearHandler={registerClearHandler}
       registerProviderSwitcher={registerProviderSwitcher}
+      registerMessagesGetter={registerMessagesGetter}
+      registerStatusBarController={registerStatusBarController}
       onLoadingChange={setIsAIResponding}
     />
   )

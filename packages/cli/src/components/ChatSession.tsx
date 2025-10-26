@@ -15,6 +15,8 @@ type ChatSessionProps = {
   onProviderSwitch?: (providerId: ProviderId, configs: AIConfig[]) => void
   onRegisterClear?: (handler: (() => void) | null) => void
   onRegisterProviderSwitcher?: (handler: ((providerId: ProviderId) => boolean) | null) => void
+  onRegisterMessagesGetter?: (handler: (() => Message[]) | null) => void
+  onRegisterStatusBarController?: (controller: StatusBarController | null) => void
   ctrlCPressed?: boolean
   onLoadingChange?: (isLoading: boolean) => void
 }
@@ -25,6 +27,8 @@ export const ChatSession = ({
   onProviderSwitch,
   onRegisterClear,
   onRegisterProviderSwitcher,
+  onRegisterMessagesGetter,
+  onRegisterStatusBarController,
   ctrlCPressed = false,
   onLoadingChange
 }: ChatSessionProps) => {
@@ -51,6 +55,10 @@ export const ChatSession = ({
     }
   }, [])
 
+  const getMessages = useCallback(() => {
+    return messages
+  }, [messages])
+
   useEffect(() => {
     if (!onRegisterClear) {
       return
@@ -61,6 +69,17 @@ export const ChatSession = ({
       onRegisterClear(null)
     }
   }, [clearMessages, onRegisterClear])
+
+  useEffect(() => {
+    if (!onRegisterMessagesGetter) {
+      return
+    }
+
+    onRegisterMessagesGetter(getMessages)
+    return () => {
+      onRegisterMessagesGetter(null)
+    }
+  }, [getMessages, onRegisterMessagesGetter])
 
   useEffect(() => {
     onHasMessages?.(messages.length > 0)
@@ -241,7 +260,21 @@ export const ChatSession = ({
 
   const handleStatusBarReady = useCallback((controller: StatusBarController) => {
     statusBarRef.current = controller
-  }, [])
+    
+    // 同时注册到父组件
+    if (onRegisterStatusBarController) {
+      onRegisterStatusBarController(controller)
+    }
+  }, [onRegisterStatusBarController])
+
+  // 清理时注销 statusBar 控制器
+  useEffect(() => {
+    return () => {
+      if (onRegisterStatusBarController) {
+        onRegisterStatusBarController(null)
+      }
+    }
+  }, [onRegisterStatusBarController])
 
   return (
     <Box flexDirection="column" padding={1}>

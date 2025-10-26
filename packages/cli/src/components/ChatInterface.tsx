@@ -10,6 +10,7 @@ import { StringHelper } from '../utils/helpers'
 import { useInputHandler } from '../hooks/useInputHandler'
 import { useCommandFilter } from '../hooks/useCommandFilter'
 import { useStatusBar } from '../hooks/useStatusBar'
+import { useInputHistory } from '../hooks/useInputHistory'
 import AnimatedGradient from './AnimatedGradient'
 
 export type Message = {
@@ -21,9 +22,10 @@ export type Message = {
 }
 
 export type StatusBarController = {
-  showInfo: (content: string) => void
-  showWarning: (content: string) => void
-  showError: (content: string) => void
+  showInfo: (content: string, autoDismiss?: number) => void
+  showWarning: (content: string, autoDismiss?: number) => void
+  showError: (content: string, autoDismiss?: number) => void
+  showSuccess: (content: string, autoDismiss?: number) => void
   clearStatus: () => void
 }
 
@@ -83,8 +85,11 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
   const [scrollOffset, setScrollOffset] = useState(0)
   const [filteredCommands, setFilteredCommands] = useState<any[]>([])
   
+  // 输入历史 hook
+  const { addToHistory, navigateHistory, resetNavigation } = useInputHistory({ maxHistorySize: 50 })
+  
   // Status bar hook
-  const { statusMessage, showInfo, showWarning, showError, clearStatus } = useStatusBar()
+  const { statusMessage, showInfo, showWarning, showError, showSuccess, clearStatus } = useStatusBar()
   
   // Randomly select an ASCII logo and quote, only once on component mount
   const randomAsciiLogo = useMemo(() => getRandomAsciiLogo(), [])
@@ -104,10 +109,11 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
         showInfo,
         showWarning,
         showError,
+        showSuccess,
         clearStatus
       })
     }
-  }, [onStatusBarReady, showInfo, showWarning, showError, clearStatus])
+  }, [onStatusBarReady, showInfo, showWarning, showError, showSuccess, clearStatus])
 
   // Use command filter hook
   useCommandFilter({
@@ -138,7 +144,10 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
     setScrollOffset,
     isLoading,
     commandRegistry,
-    onSendMessage
+    onSendMessage,
+    onNavigateHistory: navigateHistory,
+    onResetHistoryNavigation: resetNavigation,
+    onMessageSent: addToHistory
   })
 
   useInput(handleInput, { isActive: true })

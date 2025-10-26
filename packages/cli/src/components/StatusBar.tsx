@@ -8,12 +8,14 @@ type StatusBarProps = {
     model?: string
 }
 
-const getStatusColor = (type: 'info' | 'warning' | 'error'): string => {
+const getStatusColor = (type: 'info' | 'warning' | 'error' | 'success'): string => {
     switch (type) {
         case 'error':
             return 'red'
         case 'warning':
             return 'yellow'
+        case 'success':
+            return 'green'
         case 'info':
             return 'cyan'
         default:
@@ -21,12 +23,14 @@ const getStatusColor = (type: 'info' | 'warning' | 'error'): string => {
     }
 }
 
-const getStatusIcon = (type: 'info' | 'warning' | 'error'): string => {
+const getStatusIcon = (type: 'info' | 'warning' | 'error' | 'success'): string => {
     switch (type) {
         case 'error':
             return '✖'
         case 'warning':
             return '⚠'
+        case 'success':
+            return '✓'
         case 'info':
             return 'ℹ'
         default:
@@ -47,13 +51,16 @@ export const StatusBar = ({ statusMessage, onDismiss, provider, model }: StatusB
     if (statusMessage) {
         const color = getStatusColor(statusMessage.type)
         const icon = getStatusIcon(statusMessage.type)
+        const showDismissHint = !statusMessage.autoDismiss
 
         return (
             <Box marginTop={1} width="100%" justifyContent="space-between" backgroundColor={color}>
                 <Text bold>
                     {' '}{icon}{' '}{statusMessage.content}
                 </Text>
-                <Text bold italic>(Press ESC to dismiss)</Text>
+                {showDismissHint && (
+                    <Text bold italic>(Press ESC to dismiss)</Text>
+                )}
             </Box>
         )
     }

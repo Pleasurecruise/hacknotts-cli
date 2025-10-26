@@ -4,3 +4,4 @@
 export * from './useInputHandler'
 export * from './useCommandFilter'
 export * from './useStatusBar'
+export * from './useInputHistory'
