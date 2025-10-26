@@ -9,7 +9,7 @@ import type { ProviderId } from '@cherrystudio/ai-core/provider'
 import { createMcpPlugin } from 'toolkit'
 
 // 加载环境变量（从 .env 文件或系统环境变量）
-config({ path: '.env' })
+config({ path: '.env', debug: false })
 
 /**
  * AI Provider 配置接口
@@ -122,7 +122,7 @@ export async function initializeAllProviders(): Promise<AIConfig[]> {
 
   const initialized: AIConfig[] = []
 
-  console.log(`🔄 Initializing ${allConfigs.length} provider(s)...`)
+  // console.log(`🔄 Initializing ${allConfigs.length} provider(s)...`)
 
   for (const aiConfig of allConfigs) {
     try {
@@ -148,11 +148,11 @@ export async function initializeAllProviders(): Promise<AIConfig[]> {
         ? `${aiConfig.providerId} (${aiConfig.baseURL})`
         : aiConfig.providerId
 
-      console.log(`✅ Successfully initialized ${displayName} provider`)
-      console.log(`   Model: ${aiConfig.model}`)
-      if (aiConfig.useCompatibleMode) {
-        console.log(`   Mode: OpenAI-Compatible`)
-      }
+      // console.log(`✅ Successfully initialized ${displayName} provider`)
+      // console.log(`   Model: ${aiConfig.model}`)
+      // if (aiConfig.useCompatibleMode) {
+      //   console.log(`   Mode: OpenAI-Compatible`)
+      // }
 
       initialized.push(aiConfig)
     } catch (error) {
@@ -160,9 +160,9 @@ export async function initializeAllProviders(): Promise<AIConfig[]> {
     }
   }
 
-  if (initialized.length > 0) {
-    console.log(`\n🎉 Successfully initialized ${initialized.length} provider(s)`)
-  }
+  // if (initialized.length > 0) {
+  //   console.log(`\n🎉 Successfully initialized ${initialized.length} provider(s)`)
+  // }
 
   return initialized
 }
