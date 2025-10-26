@@ -1,1 +1,67 @@
+# Source files
+packages/
+src/
+*.ts
+*.tsx
+!*.d.ts
+
+# Config files
+tsconfig.json
+tsdown.config.ts
+vitest.config.ts
+.eslintrc*
+.prettierrc*
+biome.json
+
+# Development files
 .env
+.env.*
+!.env.example
+*.log
+*.tgz
+
+# Test files
+**/__tests__/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+setupVitest.ts
+
+# Build artifacts
+*.tsbuildinfo
+.cache/
+
+# Documentation (keep in git but not in npm)
+docs/
+HACKNOTTS.md
+HACKNOTTS.md.example
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Package managers
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Misc
+.husky/
+lint-staged
