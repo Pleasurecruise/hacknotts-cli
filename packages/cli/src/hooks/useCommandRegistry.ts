@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { createClearCommand, createCommandRegistry, createExitCommand, createHelpCommand, createProviderCommand, createExportCommand, createModelCommand, createCdCommand } from '../commands'
+import { createClearCommand, createCommandRegistry, createExitCommand, createHelpCommand, createProviderCommand, createExportCommand, createModelCommand, createCdCommand, createInitCommand } from '../commands'
 import type { CommandRegistry } from '../commands'
 import type { Message, StatusBarController } from '../components/ChatInterface'
 
@@ -83,6 +83,24 @@ export const useCommandRegistry = ({
         const handler = getCdHandler?.()
         if (handler) {
           handler(directory)
+        }
+      },
+      (message) => {
+        // Error message
+        const statusBar = getStatusBarController()
+        if (statusBar) {
+          statusBar.showError(message)
+        }
+      }
+    ))
+
+    // 创建初始化命令
+    registry.registerCommand(createInitCommand(
+      (message) => {
+        // Success message
+        const statusBar = getStatusBarController()
+        if (statusBar) {
+          statusBar.showSuccess(message, 0)
         }
       },
       (message) => {

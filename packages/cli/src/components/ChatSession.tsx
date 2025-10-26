@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Box, useInput } from 'ink'
 import type { Key } from 'ink'
 import { resolve } from 'node:path'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import type { ProviderId } from '@cherrystudio/ai-core/provider'
 import ChatInterface, { type Message, type StatusBarController } from './ChatInterface'
 import type { CommandRegistry } from '../commands/types'
@@ -66,6 +66,7 @@ export const ChatSession = ({
   const [currentConfig, setCurrentConfig] = useState<AIConfig | null>(null)
   const [temporaryModel, setTemporaryModel] = useState<string | null>(null)
   const [currentDirectory, setCurrentDirectory] = useState<string>(process.cwd())
+  const [contextUsedForCurrentSession, setContextUsedForCurrentSession] = useState(false)
   const initRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
   const statusBarRef = useRef<StatusBarController | null>(null)
@@ -78,11 +79,27 @@ export const ChatSession = ({
 
     setIsLoading(false)
     setMessages([])
+    setContextUsedForCurrentSession(false) // 清空对话时重置上下文标志
 
     const instance = getRenderInstance()
     if (instance) {
       instance.clear()
     }
+  }, [])
+
+  // 加载 HACKNOTTS.md 文件内容（仅在需要时调用）
+  const loadHacknottsContext = useCallback((directory: string): string | null => {
+    try {
+      const hacknottsPath = resolve(directory, 'HACKNOTTS.md')
+      if (existsSync(hacknottsPath)) {
+        const content = readFileSync(hacknottsPath, 'utf-8')
+        return content
+      }
+    } catch (error) {
+      // 静默失败，不影响用户体验
+      // console.error('Failed to load HACKNOTTS.md:', error)
+    }
+    return null
   }, [])
 
   const getMessages = useCallback(() => {
@@ -304,6 +321,9 @@ export const ChatSession = ({
       setCurrentDirectory(targetPath)
       process.chdir(targetPath)
       
+      // 重置上下文标志，下次发送消息时会重新读取
+      setContextUsedForCurrentSession(false)
+      
       statusBarRef.current?.showSuccess(`Changed directory to: ${targetPath}`, 0)
     } catch (error) {
       statusBarRef.current?.showError(
@@ -355,19 +375,43 @@ export const ChatSession = ({
     setMessages(prev => [...prev, createMessage('user', content)])
     setIsLoading(true)
 
-    const conversationHistory = [
-      ...messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      })),
-      {
-        role: 'user' as const,
-        content
+    // 构建对话历史
+    let conversationHistory = messages.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }))
+
+    // 如果这是首次消息（没有对话历史），尝试加载 HACKNOTTS.md 上下文
+    if (!contextUsedForCurrentSession && conversationHistory.length === 0) {
+      const hacknottsContext = loadHacknottsContext(currentDirectory)
+      
+      if (hacknottsContext) {
+        conversationHistory.unshift({
+          role: 'system' as const,
+          content: `# Project Context
+
+The following is the project context from HACKNOTTS.md. Please use this information to better understand the user's project and provide more relevant responses.
+
+---
+
+${hacknottsContext}
+
+---
+
+Please keep this context in mind when responding to the user's questions.`
+        })
+        setContextUsedForCurrentSession(true) // 标记已使用，避免重复添加
       }
-    ]
+    }
+
+    // 添加当前用户消息
+    conversationHistory.push({
+      role: 'user' as const,
+      content
+    })
 
     streamAIResponse(conversationHistory)
-  }, [messages, streamAIResponse])
+  }, [messages, streamAIResponse, contextUsedForCurrentSession, loadHacknottsContext, currentDirectory])
 
   const handleStatusBarReady = useCallback((controller: StatusBarController) => {
     statusBarRef.current = controller

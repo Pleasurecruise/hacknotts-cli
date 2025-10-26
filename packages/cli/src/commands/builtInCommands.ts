@@ -135,3 +135,80 @@ export const createCdCommand = (
     onExecute(directory)
   }
 })
+
+export const createInitCommand = (
+  onSuccess?: (message: string) => void,
+  onError?: (message: string) => void
+): Command => ({
+  name: 'init',
+  description: '🚀 Initialize HACKNOTTS.md context file in current directory',
+  aliases: ['initialize'],
+  execute: async () => {
+    try {
+      const fs = await import('fs')
+      const path = await import('path')
+      
+      const cwd = process.cwd()
+      const filePath = path.join(cwd, 'HACKNOTTS.md')
+      
+      // 检查文件是否已存在
+      if (fs.existsSync(filePath)) {
+        if (onError) {
+          onError('HACKNOTTS.md already exists in current directory')
+        }
+        return
+      }
+      
+      const template = `# 🎯 HackNotts Project Context
+
+## Project Overview
+<!-- Describe your project here -->
+This is a project written in JavaScript. Please provide a brief description of what you're building.
+
+## Technology Stack
+<!-- List the technologies you're using -->
+- Language: 
+- Framework: 
+- Key Libraries: 
+
+## Project Goals
+<!-- What are you trying to achieve? -->
+1. 
+2. 
+3. 
+
+## Current Status
+<!-- What have you completed and what's next? -->
+### Completed
+- 
+
+### In Progress
+- 
+
+### TODO
+- 
+
+## Important Notes
+<!-- Any important context or decisions -->
+- 
+
+## Team Members
+<!-- Optional: List your team members -->
+- 
+
+---
+*This file provides context for AI assistants to better understand your project.*
+`
+      
+      fs.writeFileSync(filePath, template, 'utf-8')
+      
+      if (onSuccess) {
+        onSuccess(`Created HACKNOTTS.md in ${cwd}`)
+      }
+    } catch (error) {
+      if (onError) {
+        onError(`Failed to create HACKNOTTS.md: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+  }
+})
