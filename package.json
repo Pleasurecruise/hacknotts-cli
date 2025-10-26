@@ -11,6 +11,7 @@
   ],
   "scripts": {
     "build": "tsdown && node docs/scripts/post-build.js && npm install -g . --force",
+    "prepublishOnly": "npm run clean && tsdown && node docs/scripts/post-build.js",
     "dev": "tsc -w",
     "clean": "rm -rf dist packages/*/dist",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --cache",
@@ -20,8 +21,23 @@
     "test:watch": "vitest"
   },
   "keywords": [
-    "toolkit",
-    "utilities"
+    "cli",
+    "ai",
+    "chatbot",
+    "terminal",
+    "openai",
+    "anthropic",
+    "claude",
+    "gpt",
+    "gemini",
+    "hackathon",
+    "hacknotts",
+    "ai-chat",
+    "interactive-cli",
+    "ai-providers",
+    "mcp",
+    "ink",
+    "react"
   ],
   "author": "Pleasurecruise, IvanHanloth",
   "license": "MIT",
