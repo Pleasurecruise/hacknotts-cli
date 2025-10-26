@@ -1,11 +1,4 @@
 /**
- * MCP Toolkit Types
- * @packageDocumentation
- */
-
-import type { ToolSet } from 'ai'
-
-/**
  * MCP plugin configuration
  */
 export interface McpPluginConfig {

@@ -1,6 +1,6 @@
 /**
- * AI Service - 管理 AI Provider 初始化和对话
- * 使用 @cherrystudio/ai-core 进行 AI 交互
+ * AI Service - Manages AI Provider initialization and conversations
+ * Uses @cherrystudio/ai-core for AI interactions
  */
 import { config } from 'dotenv'
 import { createExecutor, createPromptToolUsePlugin } from '@cherrystudio/ai-core'
@@ -8,11 +8,11 @@ import { createAndRegisterProvider } from '@cherrystudio/ai-core/provider'
 import type { ProviderId } from '@cherrystudio/ai-core/provider'
 import { createMcpPlugin } from 'toolkit'
 
-// 加载环境变量（从 .env 文件或系统环境变量）
+// Load environment variables (from .env file or system environment)
 config({ path: '.env', debug: false })
 
 /**
- * AI Provider 配置接口
+ * AI Provider Interface
  */
 export interface AIConfig {
   providerId: ProviderId
@@ -23,26 +23,26 @@ export interface AIConfig {
 }
 
 /**
- * 检查是否应该使用 OpenAI Compatible 模式
+ * Check if OpenAI Compatible mode should be used
  */
 function shouldUseCompatibleMode(baseURL?: string): boolean {
   if (!baseURL) return false
 
-  // 官方 OpenAI API 不需要 compatible 模式
+  // Official OpenAI API doesn't need compatible mode
   if (baseURL.includes('api.openai.com')) return false
 
-  // 其他自定义 URL 都使用 compatible 模式
+  // All other custom URLs use compatible mode
   return true
 }
 
 /**
- * 从环境变量获取所有配置的 Provider
- * @returns 所有配置的 Provider 数组
+ * Get all configured Providers from environment variables
+ * @returns Array of all configured Providers
  */
 export function getAllAIConfigsFromEnv(): AIConfig[] {
   const configs: AIConfig[] = []
 
-  // 检查 OpenAI 配置
+  // Check OpenAI configuration
   const openaiApiKey = process.env.OPENAI_API_KEY
   if (openaiApiKey) {
     const baseURL = process.env.OPENAI_BASE_URL
@@ -58,7 +58,7 @@ export function getAllAIConfigsFromEnv(): AIConfig[] {
     })
   }
 
-  // 检查 Anthropic 配置
+  // Check Anthropic configuration
   const anthropicApiKey = process.env.ANTHROPIC_API_KEY
   if (anthropicApiKey) {
     configs.push({
@@ -69,7 +69,7 @@ export function getAllAIConfigsFromEnv(): AIConfig[] {
     })
   }
 
-  // 检查 DeepSeek 配置
+  // Check DeepSeek configuration
   const deepseekApiKey = process.env.DEEPSEEK_API_KEY
   if (deepseekApiKey) {
     configs.push({
@@ -80,7 +80,7 @@ export function getAllAIConfigsFromEnv(): AIConfig[] {
     })
   }
 
-  // 检查 Google 配置
+  // Check Google configuration
   const googleApiKey = process.env.GOOGLE_API_KEY
   if (googleApiKey) {
     configs.push({
@@ -95,8 +95,8 @@ export function getAllAIConfigsFromEnv(): AIConfig[] {
 }
 
 /**
- * 从环境变量获取 Provider 配置（返回第一个找到的）
- * @deprecated 建议使用 getAllAIConfigsFromEnv() 和 initializeAllProviders()
+ * Get Provider configuration from environment variables (returns the first one found)
+ * @deprecated Use getAllAIConfigsFromEnv() and initializeAllProviders() instead
  */
 export function getAIConfigFromEnv(): AIConfig | null {
   const configs = getAllAIConfigsFromEnv()
@@ -104,8 +104,8 @@ export function getAIConfigFromEnv(): AIConfig | null {
 }
 
 /**
- * 初始化所有配置的 AI Providers
- * @returns 成功初始化的配置数组
+ * Initialize all configured AI Providers
+ * @returns Array of successfully initialized configurations
  */
 export async function initializeAllProviders(): Promise<AIConfig[]> {
   const allConfigs = getAllAIConfigsFromEnv()
@@ -126,17 +126,17 @@ export async function initializeAllProviders(): Promise<AIConfig[]> {
 
   for (const aiConfig of allConfigs) {
     try {
-      // 准备 provider 选项
+      // Prepare provider options
       const providerOptions: any = {
         apiKey: aiConfig.apiKey
       }
 
-      // 如果有自定义 baseURL，添加到选项中
+      // Add baseURL to options if custom baseURL exists
       if (aiConfig.baseURL) {
         providerOptions.baseURL = aiConfig.baseURL
       }
 
-      // 创建并注册 Provider
+      // Create and register Provider
       const success = await createAndRegisterProvider(aiConfig.providerId, providerOptions)
 
       if (!success) {
@@ -168,8 +168,8 @@ export async function initializeAllProviders(): Promise<AIConfig[]> {
 }
 
 /**
- * 初始化 AI Provider（返回第一个成功初始化的）
- * @deprecated 建议使用 initializeAllProviders()
+ * Initialize AI Provider (returns the first successfully initialized one)
+ * @deprecated Use initializeAllProviders() instead
  */
 export async function initializeAIProvider(): Promise<AIConfig | null> {
   const initialized = await initializeAllProviders()
@@ -177,36 +177,36 @@ export async function initializeAIProvider(): Promise<AIConfig | null> {
 }
 
 /**
- * 创建 AI 聊天流
- * 使用 async generator 返回流式文本
+ * Create AI chat stream
+ * Returns streaming text using async generator
  */
 export async function* streamAIChat(
   messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>,
   aiConfig: AIConfig
 ): AsyncGenerator<string, void, unknown> {
   try {
-    // 创建 MCP 插件（内置 fetch 工具）
+    // Create MCP plugin (with built-in fetch tool)
     const mcpPlugin = createMcpPlugin({
       verbose: false,
       toolPrefix: false
     })
 
-    // 创建工具调用处理插件
+    // Create tool use handling plugin
     const toolUsePlugin = createPromptToolUsePlugin({
       verbose: false
     })
 
-    // 创建执行器
+    // Create executor
     const executor = createExecutor(
       aiConfig.providerId,
       {
         apiKey: aiConfig.apiKey,
         ...(aiConfig.baseURL && { baseURL: aiConfig.baseURL })
       } as any,
-      [mcpPlugin, toolUsePlugin] // 添加插件：MCP工具 + 工具调用处理
+      [mcpPlugin, toolUsePlugin] // Add plugins: MCP tools + tool use handling
     )
 
-    // 调用流式文本生成
+    // Call streaming text generation
     const result = await executor.streamText({
       model: aiConfig.model,
       messages: messages.map(msg => ({
@@ -215,7 +215,7 @@ export async function* streamAIChat(
       }))
     })
 
-    // 流式返回文本
+    // Stream text response
     for await (const chunk of result.textStream) {
       yield chunk
     }
@@ -226,20 +226,20 @@ export async function* streamAIChat(
 }
 
 /**
- * 生成简单的 AI 响应（非流式）
+ * Generate AI Response
  */
 export async function generateAIResponse(
   userMessage: string,
   aiConfig: AIConfig
 ): Promise<string> {
   try {
-    // 创建 MCP 插件（内置 fetch 工具）
+    // Create MCP plugin (with built-in fetch tool)
     const mcpPlugin = createMcpPlugin({
       verbose: false,
       toolPrefix: false
     })
 
-    // 创建工具调用处理插件
+    // Create tool use handling plugin
     const toolUsePlugin = createPromptToolUsePlugin({
       verbose: false
     })

@@ -2,7 +2,7 @@
  * MCP Plugin for aiCore integration
  */
 
-import type { AiPlugin, AiRequestContext } from '@cherrystudio/ai-core/plugins'
+import type { AiPlugin, AiRequestContext } from '@cherrystudio/ai-core'
 import type { McpPluginConfig } from './types'
 import { createMcpManager, McpManager } from './manager'
 
@@ -19,7 +19,7 @@ export function createMcpPlugin(config: McpPluginConfig = {}): AiPlugin {
     enforce: 'pre',
 
     // Configure context to add MCP tools
-    configureContext: async (context: AiRequestContext) => {
+    configureContext: async () => {
       if (!initialized) {
         manager = await createMcpManager({
           verbose: config.verbose,
@@ -36,10 +36,7 @@ export function createMcpPlugin(config: McpPluginConfig = {}): AiPlugin {
     },
 
     // Transform params to add MCP tools
-    transformParams: async <T extends { tools?: any }>(
-      params: T,
-      context: AiRequestContext
-    ): Promise<T> => {
+    transformParams: async <T>(params: T, context: AiRequestContext): Promise<T> => {
       if (!manager) {
         return params
       }
@@ -48,7 +45,7 @@ export function createMcpPlugin(config: McpPluginConfig = {}): AiPlugin {
         const mcpTools = await manager.getToolSet()
 
         // Merge MCP tools with existing tools
-        const existingTools = params.tools || {}
+        const existingTools = (params as any).tools || {}
         const mergedTools = {
           ...existingTools,
           ...mcpTools
@@ -60,7 +57,7 @@ export function createMcpPlugin(config: McpPluginConfig = {}): AiPlugin {
         return {
           ...params,
           tools: mergedTools
-        }
+        } as T
       } catch (error) {
         if (config.verbose) {
           console.error('[MCP Plugin] Failed to add tools:', error)
@@ -70,7 +67,7 @@ export function createMcpPlugin(config: McpPluginConfig = {}): AiPlugin {
     },
 
     // Cleanup on error
-    onError: async (error: Error, context: AiRequestContext) => {
+    onError: async (error: Error) => {
       if (config.verbose) {
         console.error('[MCP Plugin] Error in request:', error)
       }

@@ -110,6 +110,7 @@ export class McpManager {
       const aiTool = createTool({
         description: definition.description || '',
         parameters: zodSchema,
+        // @ts-expect-error - execute function type inference with dynamic zod schema
         execute: async (args: any) => {
           try {
             return await execute(args, config)

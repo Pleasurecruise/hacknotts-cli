@@ -16,6 +16,8 @@ export default defineConfig({
     clean: true,
     dts: true,
     platform: 'node',
+    splitting: false, // Disable code splitting to avoid shared chunks
+    treeshake: true,  // Keep tree shaking for optimization
     external: [
         'yoga-wasm-web',
         'react-devtools-core',
@@ -23,8 +25,10 @@ export default defineConfig({
         'react',
         /^@ai-sdk\//,
         /^@openrouter\//,
-        // Note: @cherrystudio packages are workspace internal, should be bundled
-        // Only external for library builds, not for CLI
+        // Workspace packages - treated as external for modular builds
+        '@cherrystudio/ai-core',
+        /^@cherrystudio\/ai-core\//,
+        'toolkit',
         /^@modelcontextprotocol\//,
         'ai',
         'zod',

@@ -16,6 +16,7 @@
   "author": "Pleasurecruise, IvanHanloth",
   "license": "MIT",
   "dependencies": {
+    "@cherrystudio/ai-core": "*",
     "@modelcontextprotocol/sdk": "^1.11.0",
     "ai": "^5.0.26",
     "zod": "^3.24.1"
