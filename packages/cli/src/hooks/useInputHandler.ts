@@ -21,7 +21,7 @@ interface UseInputHandlerProps {
   setScrollOffset: (offset: number | ((prev: number) => number)) => void
   isLoading: boolean
   commandRegistry?: CommandRegistry
-  onSendMessage: (message: string, showGoodbyeMessage?: string) => void
+  onSendMessage: (message: string) => void
 }
 
 export function useInputHandler({

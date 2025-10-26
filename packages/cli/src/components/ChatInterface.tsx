@@ -3,11 +3,13 @@ import { useState, useEffect, useMemo, useCallback, memo } from 'react'
 import type { CommandRegistry } from '../commands'
 import CommandList from './CommandList'
 import LoadingSpinner from './LoadingSpinner'
+import StatusBar from './StatusBar'
 import { getRandomAsciiLogo, getRandomQuote, decorativeBanner } from '../ui/AsciiArt'
 import { MESSAGE_ROLE_CONFIG } from '../utils/constants'
 import { StringHelper } from '../utils/helpers'
 import { useInputHandler } from '../hooks/useInputHandler'
 import { useCommandFilter } from '../hooks/useCommandFilter'
+import { useStatusBar } from '../hooks/useStatusBar'
 import AnimatedGradient from './AnimatedGradient'
 
 export type Message = {
@@ -18,14 +20,22 @@ export type Message = {
   isStreaming?: boolean
 }
 
+export type StatusBarController = {
+  showInfo: (content: string) => void
+  showWarning: (content: string) => void
+  showError: (content: string) => void
+  clearStatus: () => void
+}
+
 type ChatInterfaceProps = {
-  onSendMessage: (message: string, showGoodbyeMessage?: string) => void
+  onSendMessage: (message: string) => void
   messages: Message[]
   isLoading?: boolean
   commandRegistry?: CommandRegistry
-  onShowGoodbyeMessage?: (message: string) => void
   provider?: string
   model?: string
+  onStatusBarReady?: (controller: StatusBarController) => void
+  ctrlCPressed?: boolean
 }
 
 // Extract MessageItem component and optimize with memo
@@ -65,7 +75,7 @@ const MessageItem = memo(({ message }: { message: Message }) => {
 
 MessageItem.displayName = 'MessageItem'
 
-export const ChatInterface = ({ onSendMessage, messages, isLoading = false, commandRegistry, onShowGoodbyeMessage, provider, model }: ChatInterfaceProps) => {
+export const ChatInterface = ({ onSendMessage, messages, isLoading = false, commandRegistry, provider, model, onStatusBarReady, ctrlCPressed = false }: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState('')
   const [cursorPosition, setCursorPosition] = useState(0)
   const [showCommandList, setShowCommandList] = useState(false)
@@ -73,9 +83,31 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
   const [scrollOffset, setScrollOffset] = useState(0)
   const [filteredCommands, setFilteredCommands] = useState<any[]>([])
   
+  // Status bar hook
+  const { statusMessage, showInfo, showWarning, showError, clearStatus } = useStatusBar()
+  
   // Randomly select an ASCII logo and quote, only once on component mount
   const randomAsciiLogo = useMemo(() => getRandomAsciiLogo(), [])
   const randomQuote = useMemo(() => getRandomQuote(), [])
+
+  // Show Ctrl+C warning in status bar
+  useEffect(() => {
+    if (ctrlCPressed) {
+      showWarning('⚠️  Press Ctrl+C again to exit, or any other key to cancel')
+    }
+  }, [ctrlCPressed, showWarning])
+
+  // Expose status bar controller to parent
+  useEffect(() => {
+    if (onStatusBarReady) {
+      onStatusBarReady({
+        showInfo,
+        showWarning,
+        showError,
+        clearStatus
+      })
+    }
+  }, [onStatusBarReady, showInfo, showWarning, showError, clearStatus])
 
   // Use command filter hook
   useCommandFilter({
@@ -119,7 +151,7 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
         <Box flexDirection="row">
           <Text color="cyan">› </Text>
           <Text color="gray" dimColor>
-            {showCommandList ? 'Select a command or continue typing...' : 'Type your message...'}
+            {showCommandList ? 'Select a command or continue typing...' : 'Type your message or use / to see commands...'}
           </Text>
         </Box>
       )
@@ -200,17 +232,13 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
         {renderInput()}
       </Box>
 
-      {/* Current working directory and model info - Below input box */}
-      <Box marginTop={1} justifyContent="space-between">
-        <Text color="gray">
-          Working Directory: <Text color="cyan">{process.cwd()}</Text>
-        </Text>
-        {provider && model && (
-          <Text color="gray">
-            Provider: <Text color="magenta">{provider}</Text> • Model: <Text color="green">{model}</Text>
-          </Text>
-        )}
-      </Box>
+      {/* Status Bar - Below input box */}
+      <StatusBar 
+        statusMessage={statusMessage}
+        onDismiss={clearStatus}
+        provider={provider}
+        model={model}
+      />
     </Box>
   )
 }

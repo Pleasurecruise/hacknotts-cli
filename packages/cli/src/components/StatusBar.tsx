@@ -1,0 +1,77 @@
+import { Box, Text, useInput } from 'ink'
+import type { StatusBarMessage } from '../hooks/useStatusBar'
+
+type StatusBarProps = {
+  statusMessage: StatusBarMessage | null
+  onDismiss: () => void
+  provider?: string
+  model?: string
+}
+
+const getStatusColor = (type: 'info' | 'warning' | 'error'): string => {
+  switch (type) {
+    case 'error':
+      return 'red'
+    case 'warning':
+      return 'yellow'
+    case 'info':
+      return 'cyan'
+    default:
+      return 'gray'
+  }
+}
+
+const getStatusIcon = (type: 'info' | 'warning' | 'error'): string => {
+  switch (type) {
+    case 'error':
+      return '✖'
+    case 'warning':
+      return '⚠'
+    case 'info':
+      return 'ℹ'
+    default:
+      return '•'
+  }
+}
+
+export const StatusBar = ({ statusMessage, onDismiss, provider, model }: StatusBarProps) => {
+  // Handle ESC key to dismiss status message (only when there's a message)
+  useInput((input, key) => {
+    if (key.escape && statusMessage) {
+      // Stop event propagation by handling it here
+      onDismiss()
+      return
+    }
+  }, { isActive: !!statusMessage })
+
+  if (statusMessage) {
+    const color = getStatusColor(statusMessage.type)
+    const icon = getStatusIcon(statusMessage.type)
+
+    return (
+      <Box marginTop={1} width="100%">
+        <Box width="100%" backgroundColor={color}>
+          <Text inverse bold>
+            {' '}{icon} {statusMessage.content} <Text dimColor>(Press ESC to dismiss)</Text>{' '}
+          </Text>
+        </Box>
+      </Box>
+    )
+  }
+
+  // Default status bar showing working directory and provider info
+  return (
+    <Box marginTop={1} justifyContent="space-between" width="100%">
+      <Text color="gray">
+        Working Directory: <Text color="cyan">{process.cwd()}</Text>
+      </Text>
+      {provider && model && (
+        <Text color="gray">
+          Provider: <Text color="magenta">{provider}</Text> • Model: <Text color="green">{model}</Text>
+        </Text>
+      )}
+    </Box>
+  )
+}
+
+export default StatusBar
