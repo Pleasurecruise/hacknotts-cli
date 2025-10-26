@@ -1,5 +1,6 @@
 import { Box, Text } from 'ink'
 import { memo, useMemo } from 'react'
+
 import type { Command } from '../commands/types'
 
 type CommandListProps = {

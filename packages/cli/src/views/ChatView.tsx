@@ -1,10 +1,11 @@
+import type { ProviderId } from '@cherrystudio/ai-core/provider'
 import { Box, Text } from 'ink'
 import { useState } from 'react'
-import type { ProviderId } from '@cherrystudio/ai-core/provider'
-import ChatSession from '../components/ChatSession'
-import type { AIConfig } from '../services/aiService'
+
 import type { CommandRegistry } from '../commands'
 import type { Message, StatusBarController } from '../components/ChatInterface'
+import ChatSession from '../components/ChatSession'
+import type { AIConfig } from '../services/aiService'
 import type { ProviderStatus } from '../types/app'
 import { robotMascot } from '../ui/AsciiArt'
 

@@ -3,19 +3,20 @@
  * Manages built-in MCP tools and conversion to AI SDK format
  */
 
+import type {Tool} from '@modelcontextprotocol/sdk/types.js'
 import type {ToolSet} from 'ai'
 import {tool as createTool} from 'ai'
 import {z} from 'zod'
-import type {Tool} from '@modelcontextprotocol/sdk/types.js'
-import type {McpPluginConfig} from './types'
+
 import {executeFetchTool, fetchToolDefinition} from './tools/fetch'
 import {executeFilesystemTool, filesystemToolDefinition} from './tools/filesystem'
 import {executeMemoryTool, memoryToolDefinition} from './tools/memory'
-import {executeTimeTool, timeToolDefinition} from './tools/time'
 import {
   executeSequentialThinkingTool,
   sequentialThinkingToolDefinition
 } from './tools/sequentialthinking'
+import {executeTimeTool, timeToolDefinition} from './tools/time'
+import type {McpPluginConfig} from './types'
 
 /**
  * Built-in tool definition with executor

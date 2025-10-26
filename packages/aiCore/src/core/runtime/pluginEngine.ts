@@ -1,4 +1,3 @@
-/* eslint-disable @eslint-react/naming-convention/context-name */
 import { ImageModelV2 } from '@ai-sdk/provider'
 import { experimental_generateImage, generateObject, generateText, LanguageModel, streamObject, streamText } from 'ai'
 

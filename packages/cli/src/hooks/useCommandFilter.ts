@@ -3,6 +3,7 @@
  * Handles command search and filtering logic
  */
 import { useEffect } from 'react'
+
 import type { CommandRegistry } from '../commands/types'
 import type { Command } from '../commands/types'
 

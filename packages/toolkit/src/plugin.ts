@@ -3,8 +3,9 @@
  */
 
 import type { AiPlugin, AiRequestContext } from '@cherrystudio/ai-core'
-import type { McpPluginConfig } from './types'
+
 import { createMcpManager, McpManager } from './manager'
+import type { McpPluginConfig } from './types'
 
 /**
  * Create an MCP plugin for aiCore

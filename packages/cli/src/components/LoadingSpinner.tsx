@@ -1,5 +1,6 @@
 import { Box, Text } from 'ink'
-import { useState, useEffect } from 'react'
+import { useEffect,useState } from 'react'
+
 import AnimatedGradient from './AnimatedGradient'
 
 type LoadingSpinnerProps = {

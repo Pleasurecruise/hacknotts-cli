@@ -7,8 +7,8 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
-  ListToolsRequestSchema,
   type CallToolResult,
+  ListToolsRequestSchema,
   type Tool
 } from '@modelcontextprotocol/sdk/types.js'
 
@@ -133,7 +133,7 @@ export function createFetchServer(config: FetchServerConfig = {}) {
 
       // Read response based on content type
       let content: string
-      let metadata: Record<string, any> = {
+      const metadata: Record<string, any> = {
         status: response.status,
         statusText: response.statusText,
         contentType,

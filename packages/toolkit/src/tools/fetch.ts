@@ -104,7 +104,7 @@ export async function executeFetchTool(
 
     // Read response based on content type
     let content: string
-    let metadata: Record<string, any> = {
+    const metadata: Record<string, any> = {
       status: response.status,
       statusText: response.statusText,
       contentType,

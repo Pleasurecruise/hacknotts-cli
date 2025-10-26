@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
-import { createProviderCommand, createModelCommand, createCdCommand, createClearCommand, createExportCommand, createInitCommand, createHelpCommand, createAboutCommand, createExitCommand, createCommandRegistry } from '../commands'
+
 import type { CommandRegistry } from '../commands'
+import { createAboutCommand, createCdCommand, createClearCommand, createCommandRegistry,createExitCommand, createExportCommand, createHelpCommand, createInitCommand, createModelCommand, createProviderCommand } from '../commands'
 import type { Message, StatusBarController } from '../components/ChatInterface'
 
 export type UseCommandRegistryOptions = {

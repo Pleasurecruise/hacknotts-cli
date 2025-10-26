@@ -1,4 +1,5 @@
 import { Box, Text, useInput } from 'ink'
+
 import type { StatusBarMessage } from '../hooks/useStatusBar'
 
 type StatusBarProps = {

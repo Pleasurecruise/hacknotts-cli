@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
 import Gradient from 'ink-gradient'
+import { useEffect,useState } from 'react'
 
 type AnimatedGradientProps = {
     children: React.ReactNode

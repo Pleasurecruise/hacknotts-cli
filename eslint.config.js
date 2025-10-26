@@ -1,5 +1,4 @@
 import js from '@eslint/js';
-import reactPlugin from '@eslint-react/eslint-plugin';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import unusedImports from 'eslint-plugin-unused-imports';
@@ -15,6 +14,7 @@ export default tseslint.config(
       '**/coverage/**',
       '**/*.config.ts',
       '**/*.config.js',
+      '**/*-*.js', // Ignore generated files like built-in-DuYdH3rg.js
     ],
   },
   js.configs.recommended,
@@ -22,7 +22,6 @@ export default tseslint.config(
   {
     files: ['**/*.{ts,tsx,js,jsx,mjs,cjs}'],
     plugins: {
-      '@eslint-react': reactPlugin,
       'react-hooks': reactHooksPlugin,
       'simple-import-sort': simpleImportSort,
       'unused-imports': unusedImports,

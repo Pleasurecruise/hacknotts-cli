@@ -2,7 +2,7 @@
  * Input History Hook
  * Manages command/message history with up/down arrow navigation
  */
-import { useState, useCallback, useRef } from 'react'
+import { useCallback, useRef,useState } from 'react'
 
 interface UseInputHistoryOptions {
   maxHistorySize?: number

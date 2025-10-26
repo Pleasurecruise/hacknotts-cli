@@ -1,5 +1,6 @@
 import { Box, Text, useInput } from 'ink'
-import { memo, useState, useEffect, useMemo, type ReactElement } from 'react'
+import { memo, type ReactElement,useEffect, useMemo, useState } from 'react'
+
 import type { Command } from '../commands/types'
 
 type HelpViewProps = {

@@ -1,8 +1,8 @@
-import type { Command } from './types'
-import { GOODBYE_MESSAGES, EXIT_DELAY } from '../utils/constants'
-import { randomChoice } from '../utils/helpers'
 import type { Message } from '../components/ChatInterface'
+import { EXIT_DELAY,GOODBYE_MESSAGES } from '../utils/constants'
 import { exportMessages, parseExportFormat } from '../utils/export'
+import { randomChoice } from '../utils/helpers'
+import type { Command } from './types'
 
 export const createProviderCommand = (onExecute: () => void): Command => ({
   name: 'provider',

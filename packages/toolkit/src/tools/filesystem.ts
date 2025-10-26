@@ -4,9 +4,9 @@
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js'
+import { existsSync, statSync } from 'fs'
 import * as fs from 'fs/promises'
 import * as path from 'path'
-import { existsSync, statSync } from 'fs'
 
 export interface FilesystemToolConfig {
   allowedDirectories?: string[]

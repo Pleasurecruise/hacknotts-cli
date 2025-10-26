@@ -1,13 +1,14 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { Box, useInput } from 'ink'
-import type { Key } from 'ink'
 import type { ProviderId } from '@cherrystudio/ai-core/provider'
-import ChatInterface, { type Message } from './ChatInterface'
+import type { Key } from 'ink'
+import { Box, useInput } from 'ink'
+import { useCallback, useEffect, useRef,useState } from 'react'
+
 import type { CommandRegistry } from '../commands/types'
-import { initializeAllProviders, streamAIChat, type AIConfig } from '../services/aiService'
+import { getRenderInstance } from '../index'
+import { type AIConfig,initializeAllProviders, streamAIChat } from '../services/aiService'
 import { getDefaultProvider, setDefaultProvider } from '../services/configService'
 import { createMessage, isCommand, parseCommand } from '../utils/helpers'
-import { getRenderInstance } from '../index'
+import ChatInterface, { type Message } from './ChatInterface'
 
 type ChatDemoProps = {
   commandRegistry?: CommandRegistry

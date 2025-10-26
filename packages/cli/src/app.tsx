@@ -1,19 +1,19 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useApp, useInput } from 'ink'
-import type { Key } from 'ink'
 import type { ProviderId } from '@cherrystudio/ai-core/provider'
 import { getSupportedProviders } from '@cherrystudio/ai-core/provider'
-import { getRandomAsciiLogo, robotMascot } from './ui/AsciiArt'
+import type { Key } from 'ink'
+import { useApp, useInput } from 'ink'
+import { useCallback, useMemo, useRef, useState } from 'react'
+
 import AnimationContainer from './components/AnimationContainer'
-import type { AIConfig } from './services/aiService'
 import type { Message, StatusBarController } from './components/ChatInterface'
-import { useProviderState } from './hooks/useProviderState'
 import { useCommandRegistry } from './hooks/useCommandRegistry'
-import { ChatView, type RegisterClearHandler, type RegisterProviderSwitcher, type RegisterMessagesGetter, type RegisterStatusBarController } from './views/ChatView'
-import { ProviderDashboard } from './views/ProviderDashboard'
+import { useProviderState } from './hooks/useProviderState'
+import type { AIConfig } from './services/aiService'
+import type { AppLifecycleState, ViewMode } from './types/app'
+import { getRandomAsciiLogo } from './ui/AsciiArt'
 import { GOODBYE_MESSAGES } from './utils/constants'
 import { randomChoice } from './utils/helpers'
-import type { AppLifecycleState, ViewMode } from './types/app'
+import { ChatView, type RegisterClearHandler, type RegisterMessagesGetter, type RegisterProviderSwitcher, type RegisterStatusBarController } from './views/ChatView'
 
 export const App = () => {
   const { exit } = useApp()

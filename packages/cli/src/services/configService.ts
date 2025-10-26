@@ -2,9 +2,10 @@
  * Configuration Service - 管理用户配置持久化
  * 保存用户偏好设置（默认提供商、模型等）
  */
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+
 import type { ProviderId } from '@cherrystudio/ai-core/provider'
 
 /**

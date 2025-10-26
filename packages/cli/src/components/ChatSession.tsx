@@ -1,16 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Box, useInput } from 'ink'
-import type { Key } from 'ink'
-import { resolve } from 'node:path'
 import { existsSync, readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
 import type { ProviderId } from '@cherrystudio/ai-core/provider'
-import ChatInterface, { type Message, type StatusBarController } from './ChatInterface'
+import type { Key } from 'ink'
+import { Box, useInput } from 'ink'
+import { useCallback, useEffect, useRef, useState } from 'react'
+
 import type { CommandRegistry } from '../commands/types'
-import type { ProviderStatus } from '../types/app'
-import { initializeAllProviders, streamAIChat, type AIConfig } from '../services/aiService'
-import { getDefaultProvider, setDefaultProvider } from '../services/configService'
-import { createMessage, isCommand, parseCommand } from '../utils/helpers'
 import { getRenderInstance } from '../index'
+import { type AIConfig,initializeAllProviders, streamAIChat } from '../services/aiService'
+import { getDefaultProvider, setDefaultProvider } from '../services/configService'
+import type { ProviderStatus } from '../types/app'
+import { createMessage, isCommand, parseCommand } from '../utils/helpers'
+import ChatInterface, { type Message, type StatusBarController } from './ChatInterface'
 
 type ChatSessionProps = {
   commandRegistry?: CommandRegistry
@@ -376,7 +378,7 @@ export const ChatSession = ({
     setIsLoading(true)
 
     // 构建对话历史
-    let conversationHistory = messages.map(msg => ({
+    const conversationHistory = messages.map(msg => ({
       role: msg.role,
       content: msg.content
     }))

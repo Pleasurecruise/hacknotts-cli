@@ -1,6 +1,7 @@
+import type { ProviderId } from '@cherrystudio/ai-core/provider'
 import { Box, Text, useInput } from 'ink'
 import { memo } from 'react'
-import type { ProviderId } from '@cherrystudio/ai-core/provider'
+
 import type { ProviderStatus } from '../types/app'
 
 type ProviderViewProps = {

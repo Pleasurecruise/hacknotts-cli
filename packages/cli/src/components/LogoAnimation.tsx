@@ -1,8 +1,9 @@
 // HackNotts 2025 - Logo Animation Demo Component
 // 展示基于 shadowedAsciiLogo 的动画效果
 
+import { Box } from 'ink';
 import React, { useEffect, useState } from 'react';
-import { Box, Text } from 'ink';
+
 import {
   getAnimationFrameString,
   getTotalSteps,

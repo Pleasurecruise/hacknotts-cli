@@ -2,10 +2,10 @@
  * AI Service - Manages AI Provider initialization and conversations
  * Uses @cherrystudio/ai-core for AI interactions
  */
-import { config } from 'dotenv'
 import { createExecutor, createPromptToolUsePlugin } from '@cherrystudio/ai-core'
-import { createAndRegisterProvider } from '@cherrystudio/ai-core/provider'
 import type { ProviderId } from '@cherrystudio/ai-core/provider'
+import { createAndRegisterProvider } from '@cherrystudio/ai-core/provider'
+import { config } from 'dotenv'
 import { createMcpPlugin } from 'toolkit'
 
 // Load environment variables (from .env file or system environment)

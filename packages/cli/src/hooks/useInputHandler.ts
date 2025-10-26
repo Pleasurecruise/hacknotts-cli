@@ -2,10 +2,11 @@
  * Input Handler Hook
  * Encapsulates complex input logic
  */
-import { useCallback } from 'react'
 import type { Key } from 'ink'
-import { StringHelper, parseCommand } from '../utils/helpers'
+import { useCallback } from 'react'
+
 import type { CommandRegistry } from '../commands/types'
+import { parseCommand,StringHelper } from '../utils/helpers'
 
 interface UseInputHandlerProps {
   inputValue: string

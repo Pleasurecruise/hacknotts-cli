@@ -1,8 +1,9 @@
 // HackNotts 2025 - Animation Container
 // 管理启动和关闭动画的全屏容器
 
-import React, { useState } from 'react';
 import { Box, Text } from 'ink';
+import React, { useState } from 'react';
+
 import { LogoAnimation } from './LogoAnimation.js';
 
 interface AnimationContainerProps {

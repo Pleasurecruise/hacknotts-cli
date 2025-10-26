@@ -1,8 +1,10 @@
-import { Box, Text, useInput } from 'ink'
-import { memo, useState, useEffect } from 'react'
-import { shadowedAsciiLogo } from '../ui/AsciiArt'
 import { readFileSync } from 'node:fs'
-import { resolve, dirname } from 'node:path'
+import {resolve } from 'node:path'
+
+import { Box, Text, useInput } from 'ink'
+import { memo,useState } from 'react'
+
+import { shadowedAsciiLogo } from '../ui/AsciiArt'
 import AnimatedGradient from './AnimatedGradient'
 
 type AboutViewProps = {

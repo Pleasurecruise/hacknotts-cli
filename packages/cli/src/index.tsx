@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-import { render } from 'ink'
 import { pathToFileURL } from 'node:url'
+
+import { render } from 'ink'
 
 import App from './app'
 
