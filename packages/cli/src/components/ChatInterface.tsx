@@ -8,6 +8,7 @@ import { MESSAGE_ROLE_CONFIG } from '../utils/constants'
 import { StringHelper } from '../utils/helpers'
 import { useInputHandler } from '../hooks/useInputHandler'
 import { useCommandFilter } from '../hooks/useCommandFilter'
+import AnimatedGradient from './AnimatedGradient'
 
 export type Message = {
   id: string
@@ -148,7 +149,7 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
           <Box flexDirection="column" paddingY={1} paddingX={2}>
             {/* ASCII 字符画 */}
             <Box marginBottom={1}>
-              <Text color="cyan">{randomAsciiLogo}</Text>
+              <Text color="#00FF00">{randomAsciiLogo}</Text>
             </Box>
             {/* 装饰性横幅 */}
             <Box marginBottom={1}>

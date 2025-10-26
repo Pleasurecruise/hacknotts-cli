@@ -9,6 +9,7 @@ import {
 import { getRandomAsciiLogo, robotMascot } from './ui/AsciiArt'
 import ChatDemo from './components/ChatDemo'
 import GoodbyeBox from './components/GoodbyeBox'
+import AnimationContainer from './components/AnimationContainer'
 import type { AIConfig } from './services/aiService'
 import { createCommandRegistry, createProviderCommand, createHelpCommand, createClearCommand, createExitCommand } from './commands'
 import { GOODBYE_MESSAGES } from './utils/constants'
@@ -24,6 +25,7 @@ type ProviderStatus = {
 }
 
 type ViewMode = 'providers' | 'chat'
+type AppState = 'startup' | 'running' | 'shutdown'
 
 export const App = () => {
   const { exit } = useApp()
@@ -38,6 +40,7 @@ export const App = () => {
   const [showGoodbye, setShowGoodbye] = useState(false) // 是否显示告别消息
   const [goodbyeMessage, setGoodbyeMessage] = useState('') // 告别消息内容
   const [ctrlCPressed, setCtrlCPressed] = useState(false) // Ctrl+C 按下次数
+  const [appState, setAppState] = useState<AppState>('startup') // 应用状态
 
   // 随机选择一个 ASCII 字符画，只在组件首次加载时选择一次
   const randomAsciiLogo = useMemo(() => getRandomAsciiLogo(), [])
@@ -46,12 +49,19 @@ export const App = () => {
   const performExit = (message?: string) => {
     const finalMessage = message || randomChoice(GOODBYE_MESSAGES)
     setGoodbyeMessage(finalMessage)
-    setShowGoodbye(true)
     
-    // 延迟退出以显示告别消息
-    setTimeout(() => {
-      exit()
-    }, 1000)
+    // 切换到关闭状态，播放关闭动画
+    setAppState('shutdown')
+  }
+  
+  // 启动动画完成
+  const handleStartupComplete = () => {
+    setAppState('running')
+  }
+  
+  // 关闭动画完成
+  const handleShutdownComplete = () => {
+    exit()
   }
   
 
@@ -118,8 +128,8 @@ export const App = () => {
 
   // 全局 Ctrl+C 处理 (二次确认机制)
   useInput((input: string, key: Key) => {
-    // 如果已经显示告别消息，忽略所有输入
-    if (showGoodbye) {
+    // 如果正在播放启动或关闭动画，忽略所有输入
+    if (appState === 'startup' || appState === 'shutdown') {
       return
     }
 
@@ -190,7 +200,7 @@ export const App = () => {
     if (key.escape) {
       performExit()
     }
-  }, { isActive: !showGoodbye })
+  }, { isActive: appState === 'running' })
 
   const statuses: ProviderStatus[] = useMemo(() => {
     // 只显示已初始化的 providers
@@ -206,9 +216,25 @@ export const App = () => {
     })
   }, [providerConfigs, currentProviderId, supported])
 
-  // 如果显示告别消息，只显示告别框
-  if (showGoodbye) {
-    return <GoodbyeBox message={goodbyeMessage} />
+  // 显示启动动画
+  if (appState === 'startup') {
+    return (
+      <AnimationContainer
+        type="startup"
+        onComplete={handleStartupComplete}
+      />
+    )
+  }
+
+  // 显示关闭动画
+  if (appState === 'shutdown') {
+    return (
+      <AnimationContainer
+        type="shutdown"
+        onComplete={handleShutdownComplete}
+        goodbyeMessage={goodbyeMessage}
+      />
+    )
   }
 
   // Chat View
