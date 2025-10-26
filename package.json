@@ -15,8 +15,7 @@
     "dev": "tsc -w",
     "clean": "rm -rf dist packages/*/dist",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --cache",
-    "format": "biome format --write && biome lint --write",
-    "format:check": "biome format && biome lint",
+    "lint:check": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -108,17 +107,15 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-unused-imports": "^4.1.4",
+    "globals": "^16.4.0",
     "tsdown": "^0.15.9",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.21.0",
     "vitest": "^4.0.3"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,cjs,mjs,cts,mts}": [
-      "biome format --write --no-errors-on-unmatched",
       "eslint --fix"
-    ],
-    "*.{json,yml,yaml,css,html}": [
-      "biome format --write --no-errors-on-unmatched"
     ]
   }
 }

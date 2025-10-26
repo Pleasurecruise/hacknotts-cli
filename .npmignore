@@ -11,7 +11,7 @@ tsdown.config.ts
 vitest.config.ts
 .eslintrc*
 .prettierrc*
-biome.json
+eslint.config.js
 
 # Development files
 .env
