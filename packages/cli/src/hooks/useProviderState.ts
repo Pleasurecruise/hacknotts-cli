@@ -88,7 +88,7 @@ export const useProviderState = (supportedProviders: SupportedProvider[]): UsePr
     updateProviders,
     currentProviderId,
     initializedIds,
-    initializedCount: initializedIds.length,
+    initializedCount: configs.length,
     supportedCount: supportedProviders.length,
     lastUpdated
   }

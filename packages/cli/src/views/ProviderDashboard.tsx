@@ -10,7 +10,6 @@ type ProviderDashboardProps = {
   lastUpdated: string
   currentProviderId: ProviderId | null
   robotMascotArt: string
-  asciiLogo: string
 }
 
 export const ProviderDashboard = ({
@@ -20,8 +19,7 @@ export const ProviderDashboard = ({
   supportedCount,
   lastUpdated,
   currentProviderId,
-  robotMascotArt,
-  asciiLogo
+  robotMascotArt
 }: ProviderDashboardProps) => {
   const hasProviders = statuses.length > 0
 
@@ -32,7 +30,6 @@ export const ProviderDashboard = ({
       </Box>
 
       <Box flexDirection="column">
-        <Text color="cyan">{asciiLogo}</Text>
         <Text color="magenta" bold>🔌 AI Provider Configuration Dashboard</Text>
         <Text color="gray">Powered by @cherrystudio/ai-core • HackNotts 2025</Text>
       </Box>
@@ -90,7 +87,7 @@ export const ProviderDashboard = ({
       <Box flexDirection="column" borderStyle="round" borderColor="gray" paddingX={1}>
         <Text color="yellow" bold>⌨️  Keyboard Shortcuts:</Text>
         <Text color="gray">  <Text color="green">↑/↓</Text> - Navigate   <Text color="green">Enter</Text> - Switch Provider   <Text color="green">C</Text> - Return to Chat</Text>
-        <Text color="gray">  <Text color="green">R</Text> - Refresh   <Text color="green">Q/ESC</Text> - Exit</Text>
+        <Text color="gray">  <Text color="green">R</Text> - Refresh   <Text color="green">Ctrl+C</Text> - Exit</Text>
         <Text color="gray" dimColor>Last updated: {new Date(lastUpdated).toLocaleString()}</Text>
         {currentProviderId && (
           <Text color="green" dimColor>Current provider: {currentProviderId}</Text>

@@ -157,11 +157,6 @@ export const App = () => {
         setViewMode('chat')
         return
       }
-
-      if (normalizedInput === 'q') {
-        requestExit()
-        return
-      }
     }
   })
   // 显示启动动画
@@ -195,7 +190,6 @@ export const App = () => {
         lastUpdated={lastUpdated}
         currentProviderId={currentProviderId}
         robotMascotArt={robotMascot}
-        asciiLogo={randomAsciiLogo}
       />
     )
   }
