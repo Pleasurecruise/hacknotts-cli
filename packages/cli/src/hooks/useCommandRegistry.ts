@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { createClearCommand, createCommandRegistry, createExitCommand, createHelpCommand, createAboutCommand, createProviderCommand, createExportCommand, createModelCommand, createCdCommand, createInitCommand } from '../commands'
+import { createProviderCommand, createModelCommand, createCdCommand, createClearCommand, createExportCommand, createInitCommand, createHelpCommand, createAboutCommand, createExitCommand, createCommandRegistry } from '../commands'
 import type { CommandRegistry } from '../commands'
 import type { Message, StatusBarController } from '../components/ChatInterface'
 
@@ -29,41 +29,9 @@ export const useCommandRegistry = ({
   return useMemo(() => {
     const registry = createCommandRegistry()
 
+    // 按照 builtInCommands.ts 中的函数定义顺序注册命令
     registry.registerCommand(createProviderCommand(onShowProviders))
-    // Help命令现在在ChatInterface中直接处理，这里只需要注册一个空的回调
-    registry.registerCommand(createHelpCommand(() => {}))
-    // About命令现在在ChatInterface中直接处理，这里只需要注册一个空的回调
-    registry.registerCommand(createAboutCommand(() => {}))
-    registry.registerCommand(createClearCommand(() => {
-      const handler = getClearHandler()
-      if (handler) {
-        handler()
-      }
-    }))
-    registry.registerCommand(createExitCommand(onRequestExit, onShowGoodbyeMessage))
     
-    // 创建导出命令，使用状态栏来显示消息
-    registry.registerCommand(createExportCommand(
-      () => {
-        const handler = getMessagesHandler()
-        return handler ? handler() : []
-      },
-      (message) => {
-        // Success message
-        const statusBar = getStatusBarController()
-        if (statusBar) {
-          statusBar.showSuccess(message, 0)
-        }
-      },
-      (message) => {
-        // Error message
-        const statusBar = getStatusBarController()
-        if (statusBar) {
-          statusBar.showError(message)
-        }
-      }
-    ))
-
     // 创建模型切换命令
     registry.registerCommand(createModelCommand(
       (modelName) => {
@@ -98,6 +66,35 @@ export const useCommandRegistry = ({
       }
     ))
 
+    registry.registerCommand(createClearCommand(() => {
+      const handler = getClearHandler()
+      if (handler) {
+        handler()
+      }
+    }))
+    
+    // 创建导出命令，使用状态栏来显示消息
+    registry.registerCommand(createExportCommand(
+      () => {
+        const handler = getMessagesHandler()
+        return handler ? handler() : []
+      },
+      (message) => {
+        // Success message
+        const statusBar = getStatusBarController()
+        if (statusBar) {
+          statusBar.showSuccess(message, 0)
+        }
+      },
+      (message) => {
+        // Error message
+        const statusBar = getStatusBarController()
+        if (statusBar) {
+          statusBar.showError(message)
+        }
+      }
+    ))
+
     // 创建初始化命令
     registry.registerCommand(createInitCommand(
       (message) => {
@@ -115,6 +112,14 @@ export const useCommandRegistry = ({
         }
       }
     ))
+
+    // Help命令现在在ChatInterface中直接处理，这里只需要注册一个空的回调
+    registry.registerCommand(createHelpCommand(() => {}))
+    
+    // About命令现在在ChatInterface中直接处理，这里只需要注册一个空的回调
+    registry.registerCommand(createAboutCommand(() => {}))
+    
+    registry.registerCommand(createExitCommand(onRequestExit, onShowGoodbyeMessage))
 
     return registry
   }, [getClearHandler, getMessagesHandler, getStatusBarController, getModelSwitcher, getCdHandler, onRequestExit, onShowGoodbyeMessage, onShowProviders, onShowAbout])
