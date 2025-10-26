@@ -34,7 +34,7 @@ jobs:
 #        run: npm test
 
       - name: Build
-        run: npm run clean && tsdown && node docs/scripts/post-build.js
+        run: npm run clean && npx tsdown && node docs/scripts/post-build.js
 
       - name: Check package can be installed
         run: npm pack --dry-run
