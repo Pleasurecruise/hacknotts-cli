@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
-import { createClearCommand, createCommandRegistry, createExitCommand, createHelpCommand, createProviderCommand, createExportCommand, createModelCommand, createCdCommand, createInitCommand } from '../commands'
+import { createClearCommand, createCommandRegistry, createExitCommand, createHelpCommand, createAboutCommand, createProviderCommand, createExportCommand, createModelCommand, createCdCommand, createInitCommand } from '../commands'
 import type { CommandRegistry } from '../commands'
 import type { Message, StatusBarController } from '../components/ChatInterface'
 
 export type UseCommandRegistryOptions = {
   onShowProviders: () => void
+  onShowAbout: () => void
   onRequestExit: () => void
   onShowGoodbyeMessage: (message: string) => void
   getClearHandler: () => (() => void) | undefined
@@ -16,6 +17,7 @@ export type UseCommandRegistryOptions = {
 
 export const useCommandRegistry = ({
   onShowProviders,
+  onShowAbout,
   onRequestExit,
   onShowGoodbyeMessage,
   getClearHandler,
@@ -30,6 +32,8 @@ export const useCommandRegistry = ({
     registry.registerCommand(createProviderCommand(onShowProviders))
     // Help命令现在在ChatInterface中直接处理，这里只需要注册一个空的回调
     registry.registerCommand(createHelpCommand(() => {}))
+    // About命令现在在ChatInterface中直接处理，这里只需要注册一个空的回调
+    registry.registerCommand(createAboutCommand(() => {}))
     registry.registerCommand(createClearCommand(() => {
       const handler = getClearHandler()
       if (handler) {
@@ -113,5 +117,5 @@ export const useCommandRegistry = ({
     ))
 
     return registry
-  }, [getClearHandler, getMessagesHandler, getStatusBarController, getModelSwitcher, getCdHandler, onRequestExit, onShowGoodbyeMessage, onShowProviders])
+  }, [getClearHandler, getMessagesHandler, getStatusBarController, getModelSwitcher, getCdHandler, onRequestExit, onShowGoodbyeMessage, onShowProviders, onShowAbout])
 }

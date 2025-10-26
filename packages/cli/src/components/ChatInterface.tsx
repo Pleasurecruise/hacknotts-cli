@@ -5,6 +5,7 @@ import type { CommandRegistry } from '../commands'
 import type { ProviderStatus } from '../types/app'
 import CommandList from './CommandList'
 import HelpView from './HelpView'
+import { AboutView } from './AboutView'
 import ProviderView from './ProviderView'
 import LoadingSpinner from './LoadingSpinner'
 import StatusBar from './StatusBar'
@@ -116,6 +117,7 @@ export const ChatInterface = ({
   const [cursorPosition, setCursorPosition] = useState(0)
   const [showCommandList, setShowCommandList] = useState(false)
   const [showHelpView, setShowHelpView] = useState(false)
+  const [showAboutView, setShowAboutView] = useState(false)
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0)
   const [scrollOffset, setScrollOffset] = useState(0)
   const [filteredCommands, setFilteredCommands] = useState<any[]>([])
@@ -174,6 +176,8 @@ export const ChatInterface = ({
     setShowCommandList,
     showHelpView,
     setShowHelpView,
+    showAboutView,
+    setShowAboutView,
     filteredCommands,
     selectedCommandIndex,
     setSelectedCommandIndex,
@@ -187,7 +191,7 @@ export const ChatInterface = ({
     onMessageSent: addToHistory
   })
 
-  useInput(handleInput, { isActive: !showHelpView && !showProviderView })
+  useInput(handleInput, { isActive: !showHelpView && !showAboutView && !showProviderView })
 
   // Render input box
   const renderInput = useCallback(() => {
@@ -230,6 +234,13 @@ export const ChatInterface = ({
         />
       )}
 
+      {/* About View - Full screen overlay */}
+      {showAboutView && (
+        <AboutView 
+          onClose={() => setShowAboutView(false)}
+        />
+      )}
+
       {/* Provider View - Full screen overlay */}
       {showProviderView && onCloseProviderView && onSelectPreviousProvider && onSelectNextProvider && onSwitchToProvider && (
         <ProviderView
@@ -247,7 +258,7 @@ export const ChatInterface = ({
       )}
 
       {/* Only show chat interface when overlays are not shown */}
-      {!showHelpView && !showProviderView && (
+      {!showHelpView && !showAboutView && !showProviderView && (
         <>
           <Box flexDirection="column" marginY={1}>
             {messages.length === 0 ? (

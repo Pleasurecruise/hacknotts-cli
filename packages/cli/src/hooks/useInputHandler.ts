@@ -16,6 +16,8 @@ interface UseInputHandlerProps {
   setShowCommandList: (show: boolean) => void
   showHelpView: boolean
   setShowHelpView: (show: boolean) => void
+  showAboutView: boolean
+  setShowAboutView: (show: boolean) => void
   filteredCommands: any[]
   selectedCommandIndex: number
   setSelectedCommandIndex: (index: number | ((prev: number) => number)) => void
@@ -39,6 +41,8 @@ export function useInputHandler({
   setShowCommandList,
   showHelpView,
   setShowHelpView,
+  showAboutView,
+  setShowAboutView,
   filteredCommands,
   selectedCommandIndex,
   setSelectedCommandIndex,
@@ -52,15 +56,13 @@ export function useInputHandler({
   onMessageSent
 }: UseInputHandlerProps) {
   return useCallback((input: string, key: Key) => {
-    // 如果 help view 显示，不处理输入（help view 会自己处理）
-    if (showHelpView) {
+    // 如果 help view 或 about view 显示,不处理输入(view 会自己处理)
+    if (showHelpView || showAboutView) {
       return
     }
     
-    // 计算可见区域的高度
-    const terminalHeight = process.stdout.rows || 24
-    const availableHeight = terminalHeight - 12
-    const boxHeight = Math.max(5, Math.min(availableHeight, 15))
+    // 固定显示4个指令
+    const boxHeight = 4
     const maxScroll = Math.max(0, filteredCommands.length - boxHeight)
 
     // Command list navigation
@@ -197,6 +199,10 @@ export function useInputHandler({
             // 特殊处理 help 命令
             if (commandName === 'help' || commandName === 'h' || commandName === '?') {
               setShowHelpView(true)
+            }
+            // 特殊处理 about 命令
+            else if (commandName === 'about' || commandName === 'info') {
+              setShowAboutView(true)
             } else {
               commandRegistry.executeCommand(trimmedInput)
             }
@@ -231,6 +237,7 @@ export function useInputHandler({
     cursorPosition,
     showCommandList,
     showHelpView,
+    showAboutView,
     filteredCommands,
     selectedCommandIndex,
     scrollOffset,
@@ -241,6 +248,7 @@ export function useInputHandler({
     setCursorPosition,
     setShowCommandList,
     setShowHelpView,
+    setShowAboutView,
     setSelectedCommandIndex,
     setScrollOffset,
     onNavigateHistory,

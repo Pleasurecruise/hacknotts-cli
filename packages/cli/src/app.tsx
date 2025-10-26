@@ -34,6 +34,7 @@ export const App = () => {
 
   const [viewMode, setViewMode] = useState<ViewMode>('chat')
   const [showProviderDashboard, setShowProviderDashboard] = useState(false)
+  const [showAboutView, setShowAboutView] = useState(false)
   const [appState, setAppState] = useState<AppLifecycleState>('startup')
   const [goodbyeMessage, setGoodbyeMessage] = useState('')
   const [ctrlCPressed, setCtrlCPressed] = useState(false)
@@ -96,6 +97,7 @@ export const App = () => {
 
   const commandRegistry = useCommandRegistry({
     onShowProviders: () => setShowProviderDashboard(true),
+    onShowAbout: () => setShowAboutView(true),
     onRequestExit: () => requestExit(),
     onShowGoodbyeMessage: handleGoodbyeMessage,
     getClearHandler,

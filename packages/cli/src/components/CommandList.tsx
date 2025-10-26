@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink'
-import { memo, useState, useEffect, useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import type { Command } from '../commands/types'
 
 type CommandListProps = {
@@ -16,25 +16,9 @@ export const CommandList = memo(({
   searchQuery = '',
   scrollOffset = 0
 }: CommandListProps) => {
-  const [boxHeight, setBoxHeight] = useState(8)
+  // 固定显示4个指令
+  const boxHeight = 4
   
-  // 监听终端尺寸变化
-  useEffect(() => {
-    const updateHeight = () => {
-      const terminalHeight = process.stdout.rows || 24
-      // 预留顶部标题、底部提示和输入框的空间
-      const availableHeight = terminalHeight - 12
-      setBoxHeight(Math.max(5, Math.min(availableHeight, 15)))
-    }
-
-    process.stdout.on('resize', updateHeight)
-    updateHeight()
-
-    return () => {
-      process.stdout.off('resize', updateHeight)
-    }
-  }, [])
-
   // 计算可见的命令
   const { visibleCommands, canScrollUp, canScrollDown, scrollPercentage } = useMemo(() => {
     if (commands.length === 0) {
@@ -89,13 +73,27 @@ export const CommandList = memo(({
       paddingY={0}
     >
       <Box>
-        <Text bold color="yellow">📋 Available Commands</Text>
+        <Text bold color="yellow">📋 Available Commands 
+        {/* 滚动条指示器 */}
+        {commands.length > boxHeight && (
+            <Text color="yellow" backgroundColor="black">
+               {" "}(Display: {scrollOffset + 1}-{Math.min(scrollOffset + boxHeight, commands.length)} / {commands.length})
+            </Text>
+        )}</Text>
         {searchQuery && (
           <Text color="gray" dimColor> (searching: "{searchQuery}")</Text>
         )}
       </Box>
       
       <Box flexDirection="column" borderStyle="single" borderColor="cyan">
+        {/* 滚动条指示器 */}
+        {commands.length > boxHeight && (
+          <Box>
+            <Text color="yellow" backgroundColor="black">
+              {canScrollUp ? '▲' : '  '}
+            </Text>
+          </Box>
+        )}
         {visibleCommands.map((command, index) => {
           const actualIndex = scrollOffset + index
           const isSelected = actualIndex === selectedIndex
@@ -127,7 +125,7 @@ export const CommandList = memo(({
         {commands.length > boxHeight && (
           <Box>
             <Text color="yellow" backgroundColor="black">
-              {canScrollUp ? '▲ ' : '  '}Scroll [{String(scrollPercentage).padStart(3, ' ')}%]{canScrollDown ? ' ▼' : '  '}
+              {canScrollDown ? '▼' : '  '}
             </Text>
           </Box>
         )}
@@ -139,13 +137,13 @@ export const CommandList = memo(({
         </Text>
       </Box>
       
-      {commands.length > boxHeight && (
+      {/* {commands.length > boxHeight && (
         <Box>
           <Text color="cyan" dimColor>
             Display: {scrollOffset + 1}-{Math.min(scrollOffset + boxHeight, commands.length)} / {commands.length}
           </Text>
         </Box>
-      )}
+      )} */}
     </Box>
   )
 })

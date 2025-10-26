@@ -23,6 +23,15 @@ export const createHelpCommand = (onExecute: () => void): Command => ({
   }
 })
 
+export const createAboutCommand = (onExecute: () => void): Command => ({
+  name: 'about',
+  description: 'ℹ️  Show application information and credits',
+  aliases: ['info'],
+  execute: () => {
+    onExecute()
+  }
+})
+
 export const createClearCommand = (onExecute: () => void): Command => ({
   name: 'clear',
   description: '🧹 Clear all chat messages and start fresh',
