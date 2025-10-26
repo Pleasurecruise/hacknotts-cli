@@ -10,16 +10,19 @@
 
 ## Features
 
-- **Multi-Provider Support** - Seamlessly switch between OpenAI, Anthropic, Google, xAI, DeepSeek, Azure, and more
+- **Multi-Provider Support** - Seamlessly switch between OpenAI, Anthropic, Google, xAI, DeepSeek, Azure, OpenRouter, and more
 - **Interactive Terminal UI** - Beautiful React-based interface powered by Ink with animations and streaming responses
-- **Extensible Plugin System** - Pre/post hook architecture for custom functionality
-- **Built-in Commands** - `/help`, `/provider`, `/export`, `/model`, and more
-- **Chat History Export** - Save conversations to JSON or Markdown
-- **MCP Integration** - Built-in tools for fetch, filesystem, memory, and time operations
-- **Provider Dashboard** - Visual provider status and easy switching
-- **Streaming Responses** - Real-time message streaming from AI models
-- **Configuration Persistence** - Save your preferences and default provider
-- **Full TypeScript Support** - Type-safe development experience
+- **Context-Aware AI** - Automatic HACKNOTTS.md context loading for project-specific conversations
+- **Extensible Plugin System** - Pre/post hook architecture with built-in plugins for tools, web search, and logging
+- **Built-in Commands** - `/help`, `/provider`, `/export`, `/model`, `/init`, `/about`, and more
+- **Chat History Export** - Save conversations to JSON or Markdown formats
+- **MCP Integration** - Built-in tools for fetch, filesystem, memory, time, and sequential thinking
+- **Provider Dashboard** - Visual provider status with easy switching and configuration
+- **Streaming Responses** - Real-time message streaming from AI models with animated display
+- **Configuration Persistence** - Save preferences, default provider, and working directory
+- **Working Directory Management** - Change context with `/cd` command for file operations
+- **Beautiful Animations** - Gradient effects, loading spinners, and smooth transitions
+- **Full TypeScript Support** - Type-safe development experience across all packages
 
 ## Installation
 
@@ -90,6 +93,8 @@ Available commands:
 | `/export [format]` | `save`, `download` | Export chat history (json or markdown) |
 | `/clear` | `cls`, `c` | Clear chat history |
 | `/cd <path>` | `chdir` | Change working directory |
+| `/init` | `initialize` | Initialize HACKNOTTS.md context file in current directory |
+| `/about` | `info` | Show application information and credits |
 | `/exit` | `quit`, `q` | Exit the application |
 
 ## Supported AI Providers
@@ -106,10 +111,52 @@ hacknotts-cli supports the following AI providers:
 - **OpenAI Compatible** - Custom endpoints compatible with OpenAI API
 
 Each provider can be configured with:
+
 - API keys
 - Custom base URLs
 - Default models
 - Provider-specific options
+
+## HACKNOTTS.md Context System
+
+The CLI features an intelligent context loading system through `HACKNOTTS.md` files:
+
+### Automatic Context Loading
+
+When you start a chat session, the CLI automatically searches for and loads `HACKNOTTS.md` from:
+1. Current working directory
+2. Parent directories (up to repository root)
+
+This provides AI assistants with crucial project context, including:
+- Project overview and goals
+- Technology stack
+- Current status and progress
+- Team information
+- Important notes and decisions
+
+### Creating a Context File
+
+Use the `/init` command to generate a template:
+
+```bash
+> /init
+Created HACKNOTTS.md in /your/project/path
+```
+
+The generated template includes sections for:
+- Project Overview
+- Technology Stack  
+- Project Goals
+- Current Status (Completed/In Progress/TODO)
+- Important Notes
+- Team Members
+
+### Benefits
+
+- **Better AI Understanding** - AI gets full context about your project
+- **Consistent Responses** - All team members' AI interactions use same context
+- **Progress Tracking** - Keep your project status documented
+- **Seamless Collaboration** - Share project knowledge across the team
 
 ## Configuration
 
@@ -143,8 +190,36 @@ User preferences are stored in `~/.hacknotts-cli/config.json`:
 {
   "defaultProvider": "openai",
   "defaultModel": "gpt-4",
-  "theme": "default"
+  "theme": "default",
+  "workingDirectory": "/path/to/project"
 }
+```
+
+Configuration is automatically managed by the CLI:
+
+- **Default Provider** - Set via provider dashboard or `/provider` command
+- **Default Model** - Persists your preferred model for each provider
+- **Working Directory** - Saved when using `/cd` command for persistent context
+
+### Advanced Provider Configuration
+
+For custom or self-hosted providers:
+
+```env
+# OpenAI Compatible Provider
+OPENAI_COMPATIBLE_API_KEY=your-key
+OPENAI_COMPATIBLE_BASE_URL=https://your-endpoint.com/v1
+OPENAI_COMPATIBLE_MODEL=your-model
+
+# Azure OpenAI
+AZURE_OPENAI_API_KEY=your-azure-key
+AZURE_OPENAI_RESOURCE_NAME=your-resource-name
+AZURE_OPENAI_DEPLOYMENT_NAME=your-deployment
+AZURE_OPENAI_API_VERSION=2024-02-15-preview
+
+# OpenRouter
+OPENROUTER_API_KEY=your-openrouter-key
+OPENROUTER_MODEL=anthropic/claude-3.5-sonnet
 ```
 
 ## Plugin System
@@ -160,15 +235,94 @@ Plugins can implement various hooks:
 - **Parallel-Hook** - `onRequestStart`, `onRequestEnd`, `onError` (side effects)
 - **Stream-Hook** - `transformStream` (stream processing)
 
+### Built-in Plugins
+
+The CLI includes several pre-built plugins:
+
+#### Tool Use Plugin
+Enables AI models to use tools and execute functions during conversations. Configure with `createPromptToolUsePlugin` to add custom tool capabilities.
+
+#### Web Search Plugin
+Integrates web search capabilities with provider-specific configurations:
+- OpenAI web search
+- Anthropic web search
+- Google search
+- xAI search
+- OpenRouter search
+
+#### Google Tools Plugin
+Provides access to Google-specific tools and integrations for enhanced functionality with Gemini models.
+
+#### Logging Plugin
+Adds comprehensive logging capabilities for debugging and monitoring AI interactions. Track requests, responses, and errors with customizable log levels.
+
+### Middleware System
+
+The plugin system is built on a flexible middleware architecture:
+
+- **Named Middlewares** - Organize and manage multiple middleware layers
+- **Middleware Wrapping** - Apply transformations to model inputs/outputs
+- **Chain Processing** - Sequential middleware execution with context passing
+- **Error Handling** - Graceful error catching and recovery
+
+### Creating Custom Plugins
+
+Use `definePlugin` to create your own plugins:
+
+```typescript
+import { definePlugin } from '@cherrystudio/ai-core'
+
+const myPlugin = definePlugin({
+  id: 'my-custom-plugin',
+  name: 'My Custom Plugin',
+  hooks: {
+    configureContext: async (context) => {
+      // Modify request context
+      return context
+    },
+    transformResult: async (result, context) => {
+      // Transform AI response
+      return result
+    }
+  }
+})
+```
+
 ### MCP Integration
 
 Built-in MCP tools for extended functionality:
 
-- **Fetch Tool** - Make HTTP requests with custom headers
-- **Filesystem Tool** - Read, write, and list files
-- **Memory Tool** - Persistent key-value storage
-- **Time Tool** - Get current time and timezone info
-- **Sequential Thinking Tool** - Multi-step reasoning with memory
+- **Fetch Tool** - Make HTTP requests with custom headers and authentication
+- **Filesystem Tool** - Read, write, list, and manage files in the workspace
+- **Memory Tool** - Persistent key-value storage for cross-session data
+- **Time Tool** - Get current time, timezone info, and format timestamps
+- **Sequential Thinking Tool** - Multi-step reasoning with memory and session management
+
+### MCP Server Integration
+
+The toolkit package provides MCP server capabilities:
+
+- **Server Management** - Start and manage MCP servers
+- **Tool Discovery** - Automatically discover available tools from servers
+- **Tool Execution** - Execute tools with proper parameter validation
+- **Session Handling** - Manage persistent sessions across interactions
+
+Create custom MCP plugins with `createMcpPlugin`:
+
+```typescript
+import { createMcpPlugin } from 'toolkit'
+
+const mcpPlugin = createMcpPlugin({
+  enabled: true,
+  servers: [
+    {
+      name: 'my-server',
+      command: 'node',
+      args: ['server.js']
+    }
+  ]
+})
+```
 
 ## Export Functionality
 
@@ -186,16 +340,44 @@ Export your chat history in multiple formats:
 ```
 
 Exported files include:
+
 - Full message history
 - Timestamps
 - Role indicators
 - Message metadata
 
+## User Interface Features
+
+### Terminal Animations
+
+The CLI includes several visual enhancements for a premium user experience:
+
+- **Animated Logo** - Smooth logo animation on startup with gradient effects
+- **Loading Spinners** - Context-aware loading indicators during AI processing
+- **Gradient Effects** - Beautiful animated gradients throughout the interface
+- **Smooth Transitions** - Fluid view transitions between chat, help, and provider dashboard
+- **Real-time Streaming** - Character-by-character display of AI responses
+
+### Interactive Components
+
+- **Provider Dashboard** - Navigate through providers with keyboard controls (↑/↓ arrows)
+- **Command List** - Searchable command list with syntax highlighting
+- **Status Bar** - Persistent status display showing current provider, model, and working directory
+- **Help System** - Comprehensive help view with command documentation and examples
+- **About View** - Application information, version, and credits
+
+### Keyboard Controls
+
+- **Ctrl+C** - Interrupt current AI generation or cancel input
+- **↑/↓** - Navigate command history or provider list
+- **Tab** - Command auto-completion (when available)
+- **Esc** - Close modal views (help, provider dashboard, about)
+
 ## Development
 
 ### Project Structure
 
-```
+```plaintext
 hacknotts-cli/
 ├── packages/
 │   ├── cli/              # Main CLI application
@@ -203,21 +385,50 @@ hacknotts-cli/
 │   │   │   ├── index.tsx # Entry point
 │   │   │   ├── app.tsx   # Main app component
 │   │   │   ├── components/
-│   │   │   └── services/
+│   │   │   │   ├── ChatSession.tsx      # Main chat session logic
+│   │   │   │   ├── ChatInterface.tsx    # Chat UI component
+│   │   │   │   ├── ProviderView.tsx     # Provider dashboard
+│   │   │   │   ├── HelpView.tsx         # Help command view
+│   │   │   │   ├── AboutView.tsx        # About information
+│   │   │   │   ├── StatusBar.tsx        # Status display
+│   │   │   │   ├── LoadingSpinner.tsx   # Loading animation
+│   │   │   │   ├── LogoAnimation.tsx    # Logo with animations
+│   │   │   │   └── AnimatedGradient.tsx # Gradient effects
+│   │   │   ├── commands/
+│   │   │   │   ├── CommandRegistry.ts   # Command system
+│   │   │   │   └── builtInCommands.ts   # Built-in commands
+│   │   │   ├── services/
+│   │   │   │   ├── aiService.ts         # AI provider service
+│   │   │   │   └── configService.ts     # Configuration management
+│   │   │   └── utils/
 │   ├── aiCore/           # AI provider and plugin system
 │   │   ├── src/
 │   │   │   ├── core/
-│   │   │   │   ├── providers/
-│   │   │   │   ├── plugins/
-│   │   │   │   └── runtime/
+│   │   │   │   ├── providers/           # Provider implementations
+│   │   │   │   ├── plugins/             # Plugin system
+│   │   │   │   │   └── built-in/        # Built-in plugins
+│   │   │   │   ├── middleware/          # Middleware architecture
+│   │   │   │   ├── models/              # Model resolution
+│   │   │   │   ├── options/             # Provider options
+│   │   │   │   └── runtime/             # Execution runtime
 │   └── toolkit/          # MCP utilities
 │       └── src/
-│           ├── manager.ts
-│           └── plugin.ts
+│           ├── manager.ts   # MCP manager
+│           ├── plugin.ts    # MCP plugin integration
+│           ├── servers/     # MCP server implementations
+│           └── tools/       # Built-in MCP tools
 ├── docs/
 ├── .env                  # Provider configuration
 └── package.json
 ```
+
+### Architecture
+
+**Three-Layer Design:**
+
+1. **CLI Layer** (`packages/cli`) - User interface, commands, and interaction logic
+2. **AI Core Layer** (`packages/aiCore`) - Provider abstraction, plugin system, and execution runtime
+3. **Toolkit Layer** (`packages/toolkit`) - MCP integration and tool implementations
 
 ### Build Commands
 
@@ -246,10 +457,144 @@ npm test
 npm run test:watch
 ```
 
+## Usage Examples
+
+### Basic Conversation
+
+```bash
+> What is the capital of France?
+The capital of France is Paris.
+
+> /model gpt-3.5-turbo
+✓ Switched to model: gpt-3.5-turbo
+
+> Tell me more about it
+Paris is the largest city in France and has been the country's capital since...
+```
+
+### Working with Files
+
+```bash
+> /cd ./my-project
+✓ Changed working directory to: ./my-project
+
+> Can you read the README.md file?
+[AI uses filesystem tool to read and analyze README.md]
+
+> /init
+✓ Created HACKNOTTS.md in /path/to/my-project
+```
+
+### Switching Providers
+
+```bash
+> /provider
+# Opens provider dashboard
+# Use ↑/↓ to navigate, Enter to select
+
+> Tell me a joke
+[Response from newly selected provider]
+```
+
+### Exporting Conversations
+
+```bash
+> This is important information I want to save
+
+> /export markdown
+✓ Exported 12 messages to chat-history-2025-10-26.md (MARKDOWN)
+
+> /export json
+✓ Exported 12 messages to chat-history-2025-10-26.json (JSON)
+```
+
+## Best Practices
+
+### For Developers
+
+1. **Use HACKNOTTS.md** - Create context files for your projects to give AI better understanding
+2. **Organize by Directory** - Use `/cd` to switch between project contexts
+3. **Export Important Sessions** - Save breakthrough conversations with `/export`
+4. **Test Multiple Providers** - Different providers excel at different tasks
+5. **Leverage Plugins** - Enable web search and tools for enhanced capabilities
+
+### For Hackathons
+
+1. **Document as You Go** - Update HACKNOTTS.md with progress
+2. **Quick Provider Switching** - Test ideas across different models
+3. **Code Review** - Use AI to review and improve your code
+4. **Architecture Planning** - Discuss system design with context-aware AI
+5. **Debug Together** - Paste errors and get instant help
+
+### Performance Tips
+
+1. **API Key Management** - Keep keys in `.env`, never commit them
+2. **Model Selection** - Use faster models for quick tasks, advanced models for complex problems
+3. **Clear History** - Use `/clear` to free memory in long sessions
+4. **Working Directory** - Set correct directory for file operations
+
 ## Requirements
 
 - Node.js >= 22.12.0
 - npm or yarn
+- API keys for at least one AI provider
+
+## Troubleshooting
+
+### Common Issues
+
+**CLI Not Found After Installation**
+
+```bash
+# Reinstall globally
+npm run build
+# Or manually link
+npm link
+```
+
+**API Key Errors**
+
+```bash
+# Verify .env file exists in project root
+ls -la .env
+
+# Check environment variables are loaded
+cat .env
+```
+
+**Provider Not Initializing**
+
+- Ensure API key is valid and has correct format
+- Check base URL if using custom endpoints
+- Verify network connectivity
+- Review model name spelling
+
+**Streaming Issues**
+
+- Some providers may have rate limits
+- Check terminal supports ANSI colors
+- Try different terminal emulator if display issues occur
+
+**File Operation Errors**
+
+- Verify working directory exists: `/cd /path/to/dir`
+- Check file permissions
+- Ensure paths are absolute or relative to working directory
+
+### Debug Mode
+
+Enable verbose logging by setting environment variable:
+
+```bash
+DEBUG=hacknotts:* hacknotts
+```
+
+### Getting Help
+
+- Check `/help` for command documentation
+- Review `/about` for version information
+- Visit [Issues](https://github.com/Pleasurecruise/hacknotts-cli/issues) for known problems
+- Join HackNotts Discord for community support
 
 ## Contributing
 
