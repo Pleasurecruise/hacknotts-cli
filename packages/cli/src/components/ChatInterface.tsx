@@ -31,6 +31,22 @@ type ChatInterfaceProps = {
 const MessageItem = memo(({ message }: { message: Message }) => {
   const config = MESSAGE_ROLE_CONFIG[message.role]
   
+  // Use markdown for assistant messages, plain text for others
+  const renderContent = () => {
+    // TODO: Add markdown support back when ink-markdown compatibility is fixed
+    // if (message.role === 'assistant') {
+    //   return <Markdown>{message.content}</Markdown>
+    // }
+    
+    // Plain text for all messages
+    return (
+      <Text wrap="wrap">
+        {message.content}
+        {message.isStreaming && <Text color="gray">▋</Text>}
+      </Text>
+    )
+  }
+  
   return (
     <Box flexDirection="column" marginBottom={1}>
       <Box>
@@ -40,10 +56,7 @@ const MessageItem = memo(({ message }: { message: Message }) => {
         <Text color="gray" dimColor> • {message.timestamp.toLocaleTimeString()}</Text>
       </Box>
       <Box paddingLeft={2}>
-        <Text wrap="wrap">
-          {message.content}
-          {message.isStreaming && <Text color="gray">▋</Text>}
-        </Text>
+        {renderContent()}
       </Box>
     </Box>
   )

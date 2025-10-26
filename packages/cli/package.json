@@ -19,6 +19,7 @@
     "@cherrystudio/ai-core": "^1.0.1",
     "dotenv": "^17.2.3",
     "ink": "^6.3.1",
+    "ink-gradient": "^3.0.0",
     "react": "^19.2.0"
   },
   "devDependencies": {

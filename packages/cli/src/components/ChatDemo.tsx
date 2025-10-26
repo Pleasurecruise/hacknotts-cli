@@ -7,6 +7,7 @@ import type { CommandRegistry } from '../commands/types'
 import { initializeAllProviders, streamAIChat, type AIConfig } from '../services/aiService'
 import { getDefaultProvider, setDefaultProvider } from '../services/configService'
 import { createMessage, isCommand, parseCommand } from '../utils/helpers'
+import { getRenderInstance } from '../index'
 
 type ChatDemoProps = {
   commandRegistry?: CommandRegistry
@@ -213,8 +214,11 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages,
       // Special handling for clear command
       const { command } = parseCommand(content)
       if (command === 'clear') {
-        // Clear terminal screen
-        process.stdout.write('\x1Bc')
+        // Use Ink's render instance clear method
+        const instance = getRenderInstance()
+        if (instance) {
+          instance.clear()
+        }
         // Clear chat messages
         setMessages([])
         return
@@ -254,8 +258,8 @@ export const ChatDemo = ({ commandRegistry, onShowGoodbyeMessage, onHasMessages,
         isLoading={isLoading}
         commandRegistry={commandRegistry}
         onShowGoodbyeMessage={onShowGoodbyeMessage}
-        provider={aiConfigs?.providerId}
-        model={aiConfigs?.model}
+        provider={currentConfig?.providerId}
+        model={currentConfig?.model}
       />
     </Box>
   )
