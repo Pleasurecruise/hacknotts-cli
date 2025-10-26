@@ -14,6 +14,8 @@ interface UseInputHandlerProps {
   setCursorPosition: (position: number) => void
   showCommandList: boolean
   setShowCommandList: (show: boolean) => void
+  showHelpView: boolean
+  setShowHelpView: (show: boolean) => void
   filteredCommands: any[]
   selectedCommandIndex: number
   setSelectedCommandIndex: (index: number | ((prev: number) => number)) => void
@@ -35,6 +37,8 @@ export function useInputHandler({
   setCursorPosition,
   showCommandList,
   setShowCommandList,
+  showHelpView,
+  setShowHelpView,
   filteredCommands,
   selectedCommandIndex,
   setSelectedCommandIndex,
@@ -48,6 +52,11 @@ export function useInputHandler({
   onMessageSent
 }: UseInputHandlerProps) {
   return useCallback((input: string, key: Key) => {
+    // 如果 help view 显示，不处理输入（help view 会自己处理）
+    if (showHelpView) {
+      return
+    }
+    
     // 计算可见区域的高度
     const terminalHeight = process.stdout.rows || 24
     const availableHeight = terminalHeight - 12
@@ -108,7 +117,7 @@ export function useInputHandler({
       if (key.tab) {
         const selectedCommand = filteredCommands[selectedCommandIndex]
         if (selectedCommand) {
-          const newValue = `/${selectedCommand.name} `
+          const newValue = `/${selectedCommand.name}`
           setInputValue(newValue)
           setCursorPosition(StringHelper.getLength(newValue))
         }
@@ -185,7 +194,12 @@ export function useInputHandler({
           const command = commandRegistry.getCommand(commandName)
           
           if (command) {
-            commandRegistry.executeCommand(trimmedInput)
+            // 特殊处理 help 命令
+            if (commandName === 'help' || commandName === 'h' || commandName === '?') {
+              setShowHelpView(true)
+            } else {
+              commandRegistry.executeCommand(trimmedInput)
+            }
           } else {
             onSendMessage(trimmedInput)
           }
@@ -216,6 +230,7 @@ export function useInputHandler({
     inputValue,
     cursorPosition,
     showCommandList,
+    showHelpView,
     filteredCommands,
     selectedCommandIndex,
     scrollOffset,
@@ -225,6 +240,7 @@ export function useInputHandler({
     setInputValue,
     setCursorPosition,
     setShowCommandList,
+    setShowHelpView,
     setSelectedCommandIndex,
     setScrollOffset,
     onNavigateHistory,

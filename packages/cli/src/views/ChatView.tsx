@@ -5,6 +5,7 @@ import ChatSession from '../components/ChatSession'
 import type { AIConfig } from '../services/aiService'
 import type { CommandRegistry } from '../commands'
 import type { Message, StatusBarController } from '../components/ChatInterface'
+import type { ProviderStatus } from '../types/app'
 import { robotMascot } from '../ui/AsciiArt'
 
 export type RegisterClearHandler = (handler: (() => void) | null) => void
@@ -21,6 +22,17 @@ type ChatViewProps = {
   registerMessagesGetter: RegisterMessagesGetter
   registerStatusBarController: RegisterStatusBarController
   onLoadingChange?: (isLoading: boolean) => void
+  // Provider dashboard props
+  showProviderDashboard?: boolean
+  providerStatuses?: ProviderStatus[]
+  selectedProviderIndex?: number
+  initializedCount?: number
+  supportedCount?: number
+  currentProviderId?: ProviderId | null
+  onCloseProviderDashboard?: () => void
+  onSelectPreviousProvider?: () => void
+  onSelectNextProvider?: () => void
+  onSwitchToProvider?: (index: number) => void
 }
 
 export const ChatView = ({
@@ -31,7 +43,17 @@ export const ChatView = ({
   registerProviderSwitcher,
   registerMessagesGetter,
   registerStatusBarController,
-  onLoadingChange
+  onLoadingChange,
+  showProviderDashboard = false,
+  providerStatuses = [],
+  selectedProviderIndex = 0,
+  initializedCount = 0,
+  supportedCount = 0,
+  currentProviderId = null,
+  onCloseProviderDashboard,
+  onSelectPreviousProvider,
+  onSelectNextProvider,
+  onSwitchToProvider
 }: ChatViewProps) => {
   const [hasMessages, setHasMessages] = useState(false)
   const mascot = robotMascot
@@ -54,6 +76,16 @@ export const ChatView = ({
         onRegisterStatusBarController={registerStatusBarController}
         ctrlCPressed={ctrlCPressed}
         onLoadingChange={onLoadingChange}
+        showProviderView={showProviderDashboard}
+        providerStatuses={providerStatuses}
+        selectedProviderIndex={selectedProviderIndex}
+        initializedCount={initializedCount}
+        supportedCount={supportedCount}
+        currentProviderId={currentProviderId}
+        onCloseProviderView={onCloseProviderDashboard}
+        onSelectPreviousProvider={onSelectPreviousProvider}
+        onSelectNextProvider={onSelectNextProvider}
+        onSwitchToProvider={onSwitchToProvider}
       />
     </Box>
   )

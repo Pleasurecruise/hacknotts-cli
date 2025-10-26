@@ -1,10 +1,14 @@
 import { Box, Text, useInput } from 'ink'
 import { useState, useEffect, useMemo, useCallback, memo } from 'react'
+import type { ProviderId } from '@cherrystudio/ai-core/provider'
 import type { CommandRegistry } from '../commands'
+import type { ProviderStatus } from '../types/app'
 import CommandList from './CommandList'
+import HelpView from './HelpView'
+import ProviderView from './ProviderView'
 import LoadingSpinner from './LoadingSpinner'
 import StatusBar from './StatusBar'
-import { getRandomAsciiLogo, getRandomQuote, decorativeBanner } from '../ui/AsciiArt'
+import { getRandomAsciiLogo, getRandomQuote, decorativeBanner, robotMascot } from '../ui/AsciiArt'
 import { MESSAGE_ROLE_CONFIG } from '../utils/constants'
 import { StringHelper } from '../utils/helpers'
 import { useInputHandler } from '../hooks/useInputHandler'
@@ -38,6 +42,17 @@ type ChatInterfaceProps = {
   model?: string
   onStatusBarReady?: (controller: StatusBarController) => void
   ctrlCPressed?: boolean
+  // Provider view props
+  showProviderView?: boolean
+  providerStatuses?: ProviderStatus[]
+  selectedProviderIndex?: number
+  initializedCount?: number
+  supportedCount?: number
+  currentProviderId?: ProviderId | null
+  onCloseProviderView?: () => void
+  onSelectPreviousProvider?: () => void
+  onSelectNextProvider?: () => void
+  onSwitchToProvider?: (index: number) => void
 }
 
 // Extract MessageItem component and optimize with memo
@@ -77,10 +92,30 @@ const MessageItem = memo(({ message }: { message: Message }) => {
 
 MessageItem.displayName = 'MessageItem'
 
-export const ChatInterface = ({ onSendMessage, messages, isLoading = false, commandRegistry, provider, model, onStatusBarReady, ctrlCPressed = false }: ChatInterfaceProps) => {
+export const ChatInterface = ({ 
+  onSendMessage, 
+  messages, 
+  isLoading = false, 
+  commandRegistry, 
+  provider, 
+  model, 
+  onStatusBarReady, 
+  ctrlCPressed = false,
+  showProviderView = false,
+  providerStatuses = [],
+  selectedProviderIndex = 0,
+  initializedCount = 0,
+  supportedCount = 0,
+  currentProviderId = null,
+  onCloseProviderView,
+  onSelectPreviousProvider,
+  onSelectNextProvider,
+  onSwitchToProvider
+}: ChatInterfaceProps) => {
   const [inputValue, setInputValue] = useState('')
   const [cursorPosition, setCursorPosition] = useState(0)
   const [showCommandList, setShowCommandList] = useState(false)
+  const [showHelpView, setShowHelpView] = useState(false)
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0)
   const [scrollOffset, setScrollOffset] = useState(0)
   const [filteredCommands, setFilteredCommands] = useState<any[]>([])
@@ -137,6 +172,8 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
     setCursorPosition,
     showCommandList,
     setShowCommandList,
+    showHelpView,
+    setShowHelpView,
     filteredCommands,
     selectedCommandIndex,
     setSelectedCommandIndex,
@@ -150,7 +187,7 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
     onMessageSent: addToHistory
   })
 
-  useInput(handleInput, { isActive: true })
+  useInput(handleInput, { isActive: !showHelpView && !showProviderView })
 
   // Render input box
   const renderInput = useCallback(() => {
@@ -185,69 +222,98 @@ export const ChatInterface = ({ onSendMessage, messages, isLoading = false, comm
 
   return (
     <Box flexDirection="column">
-      <Box flexDirection="column" marginY={1}>
-        {messages.length === 0 ? (
-          <Box flexDirection="column" paddingY={1} paddingX={2}>
-            {/* ASCII 字符画 */}
-            <Box marginBottom={1}>
-              <Text color="#00FF00">{randomAsciiLogo}</Text>
-            </Box>
-            {/* 装饰性横幅 */}
-            <Box marginBottom={1}>
-              <Text color="magenta">{decorativeBanner}</Text>
-            </Box>
-            {/* 励志名言 */}
-            <Box marginBottom={1}>
-              <Text color="yellow">{randomQuote}</Text>
-            </Box>
-          </Box>
-        ) : (
-          <Box flexDirection="column">
-            {/* 渲染所有消息 */}
-            {messages.map(message => (
-              <MessageItem key={message.id} message={message} />
-            ))}
-          </Box>
-        )}
-      </Box>
-
-      {/* Command List - Show when input starts with / */}
-      {showCommandList && commandRegistry && (
-        <CommandList 
-          commands={filteredCommands}
-          selectedIndex={selectedCommandIndex}
-          searchQuery={inputValue.slice(1)}
-          scrollOffset={scrollOffset}
-          onClose={() => setShowCommandList(false)}
+      {/* Help View - Full screen overlay */}
+      {showHelpView && commandRegistry && (
+        <HelpView 
+          commands={commandRegistry.getAllCommands()}
+          onClose={() => setShowHelpView(false)}
         />
       )}
 
-      {/* Loading indicator - Above input box */}
-      {isLoading && (
-        <Box marginBottom={1}>
-          <LoadingSpinner />
-        </Box>
+      {/* Provider View - Full screen overlay */}
+      {showProviderView && onCloseProviderView && onSelectPreviousProvider && onSelectNextProvider && onSwitchToProvider && (
+        <ProviderView
+          statuses={providerStatuses}
+          selectedIndex={selectedProviderIndex}
+          initializedCount={initializedCount}
+          supportedCount={supportedCount}
+          currentProviderId={currentProviderId}
+          robotMascotArt={robotMascot}
+          onClose={onCloseProviderView}
+          onSelectPrevious={onSelectPreviousProvider}
+          onSelectNext={onSelectNextProvider}
+          onSwitchProvider={onSwitchToProvider}
+        />
       )}
 
-      {/* Input Box - Always at Bottom */}
-      <Box 
-        flexDirection="column"
-        borderStyle="round" 
-        borderColor={isLoading ? 'yellow' : showCommandList ? 'yellow' : 'green'}
-        paddingX={1}
-        paddingY={0}
-        minHeight={3}
-      >
-        {renderInput()}
-      </Box>
+      {/* Only show chat interface when overlays are not shown */}
+      {!showHelpView && !showProviderView && (
+        <>
+          <Box flexDirection="column" marginY={1}>
+            {messages.length === 0 ? (
+              <Box flexDirection="column" paddingY={1} paddingX={2}>
+                {/* ASCII 字符画 */}
+                <Box marginBottom={1}>
+                  <Text color="#00FF00">{randomAsciiLogo}</Text>
+                </Box>
+                {/* 装饰性横幅 */}
+                <Box marginBottom={1}>
+                  <Text color="magenta">{decorativeBanner}</Text>
+                </Box>
+                {/* 励志名言 */}
+                <Box marginBottom={1}>
+                  <Text color="yellow">{randomQuote}</Text>
+                </Box>
+              </Box>
+            ) : (
+              <Box flexDirection="column">
+                {/* 渲染所有消息 */}
+                {messages.map(message => (
+                  <MessageItem key={message.id} message={message} />
+                ))}
+              </Box>
+            )}
+          </Box>
 
-      {/* Status Bar - Below input box */}
-      <StatusBar 
-        statusMessage={statusMessage}
-        onDismiss={clearStatus}
-        provider={provider}
-        model={model}
-      />
+          {/* Command List - Show when input starts with / */}
+          {showCommandList && commandRegistry && (
+            <CommandList 
+              commands={filteredCommands}
+              selectedIndex={selectedCommandIndex}
+              searchQuery={inputValue.slice(1)}
+              scrollOffset={scrollOffset}
+              onClose={() => setShowCommandList(false)}
+            />
+          )}
+
+          {/* Loading indicator - Above input box */}
+          {isLoading && (
+            <Box marginBottom={1}>
+              <LoadingSpinner />
+            </Box>
+          )}
+
+          {/* Input Box - Always at Bottom */}
+          <Box 
+            flexDirection="column"
+            borderStyle="round" 
+            borderColor={isLoading ? 'yellow' : showCommandList ? 'yellow' : 'green'}
+            paddingX={1}
+            paddingY={0}
+            minHeight={3}
+          >
+            {renderInput()}
+          </Box>
+
+          {/* Status Bar - Below input box */}
+          <StatusBar 
+            statusMessage={statusMessage}
+            onDismiss={clearStatus}
+            provider={provider}
+            model={model}
+          />
+        </>
+      )}
     </Box>
   )
 }

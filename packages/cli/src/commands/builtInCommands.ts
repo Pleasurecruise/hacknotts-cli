@@ -13,13 +13,13 @@ export const createProviderCommand = (onExecute: () => void): Command => ({
   }
 })
 
-export const createHelpCommand = (getAllCommands: () => Command[]): Command => ({
+export const createHelpCommand = (onExecute: () => void): Command => ({
   name: 'help',
   description: '❓ Show all available commands and usage tips',
   aliases: ['h', '?'],
   execute: () => {
-    // 这个命令的执行会在 ChatInterface 中特殊处理
-    // 因为需要显示命令列表UI
+    // 执行回调以显示帮助视图
+    onExecute()
   }
 })
 

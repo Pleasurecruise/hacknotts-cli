@@ -4,6 +4,7 @@ import type { Key } from 'ink'
 import type { ProviderId } from '@cherrystudio/ai-core/provider'
 import ChatInterface, { type Message, type StatusBarController } from './ChatInterface'
 import type { CommandRegistry } from '../commands/types'
+import type { ProviderStatus } from '../types/app'
 import { initializeAllProviders, streamAIChat, type AIConfig } from '../services/aiService'
 import { getDefaultProvider, setDefaultProvider } from '../services/configService'
 import { createMessage, isCommand, parseCommand } from '../utils/helpers'
@@ -19,6 +20,17 @@ type ChatSessionProps = {
   onRegisterStatusBarController?: (controller: StatusBarController | null) => void
   ctrlCPressed?: boolean
   onLoadingChange?: (isLoading: boolean) => void
+  // Provider view props
+  showProviderView?: boolean
+  providerStatuses?: ProviderStatus[]
+  selectedProviderIndex?: number
+  initializedCount?: number
+  supportedCount?: number
+  currentProviderId?: ProviderId | null
+  onCloseProviderView?: () => void
+  onSelectPreviousProvider?: () => void
+  onSelectNextProvider?: () => void
+  onSwitchToProvider?: (index: number) => void
 }
 
 export const ChatSession = ({
@@ -30,7 +42,17 @@ export const ChatSession = ({
   onRegisterMessagesGetter,
   onRegisterStatusBarController,
   ctrlCPressed = false,
-  onLoadingChange
+  onLoadingChange,
+  showProviderView = false,
+  providerStatuses = [],
+  selectedProviderIndex = 0,
+  initializedCount = 0,
+  supportedCount = 0,
+  currentProviderId = null,
+  onCloseProviderView,
+  onSelectPreviousProvider,
+  onSelectNextProvider,
+  onSwitchToProvider
 }: ChatSessionProps) => {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -287,6 +309,16 @@ export const ChatSession = ({
         model={currentConfig?.model}
         onStatusBarReady={handleStatusBarReady}
         ctrlCPressed={ctrlCPressed}
+        showProviderView={showProviderView}
+        providerStatuses={providerStatuses}
+        selectedProviderIndex={selectedProviderIndex}
+        initializedCount={initializedCount}
+        supportedCount={supportedCount}
+        currentProviderId={currentProviderId}
+        onCloseProviderView={onCloseProviderView}
+        onSelectPreviousProvider={onSelectPreviousProvider}
+        onSelectNextProvider={onSelectNextProvider}
+        onSwitchToProvider={onSwitchToProvider}
       />
     </Box>
   )

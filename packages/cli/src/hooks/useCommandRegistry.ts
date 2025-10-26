@@ -24,7 +24,8 @@ export const useCommandRegistry = ({
     const registry = createCommandRegistry()
 
     registry.registerCommand(createProviderCommand(onShowProviders))
-    registry.registerCommand(createHelpCommand(() => registry.getAllCommands()))
+    // Help命令现在在ChatInterface中直接处理，这里只需要注册一个空的回调
+    registry.registerCommand(createHelpCommand(() => {}))
     registry.registerCommand(createClearCommand(() => {
       const handler = getClearHandler()
       if (handler) {

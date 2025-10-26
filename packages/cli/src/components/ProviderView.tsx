@@ -3,7 +3,7 @@ import { memo } from 'react'
 import type { ProviderId } from '@cherrystudio/ai-core/provider'
 import type { ProviderStatus } from '../types/app'
 
-type ProviderDashboardProps = {
+type ProviderViewProps = {
   statuses: ProviderStatus[]
   selectedIndex: number
   initializedCount: number
@@ -16,7 +16,7 @@ type ProviderDashboardProps = {
   onSwitchProvider: (index: number) => void
 }
 
-export const ProviderDashboard = memo(({
+export const ProviderView = memo(({
   statuses,
   selectedIndex,
   initializedCount,
@@ -27,7 +27,7 @@ export const ProviderDashboard = memo(({
   onSelectPrevious,
   onSelectNext,
   onSwitchProvider
-}: ProviderDashboardProps) => {
+}: ProviderViewProps) => {
   const hasProviders = statuses.length > 0
 
   // 处理键盘输入
@@ -66,9 +66,6 @@ export const ProviderDashboard = memo(({
       >
         {/* 标题和Logo */}
         <Box flexDirection="column" marginBottom={1}>
-          <Box>
-            <Text color="cyan">{robotMascotArt}</Text>
-          </Box>
           <Box marginTop={1}>
             <Text color="cyan" bold>🔌 AI Provider Configuration</Text>
           </Box>
@@ -77,6 +74,7 @@ export const ProviderDashboard = memo(({
         {/* 统计信息 */}
         <Box 
           flexDirection="column"
+          borderStyle="single"
           borderColor="gray"
           paddingX={1}
           marginBottom={1}
@@ -96,6 +94,7 @@ export const ProviderDashboard = memo(({
         {/* 提供商列表 */}
         <Box 
           flexDirection="column" 
+          borderStyle="single"
           borderColor="gray"
           paddingX={1}
         >
@@ -166,6 +165,6 @@ export const ProviderDashboard = memo(({
   )
 })
 
-ProviderDashboard.displayName = 'ProviderDashboard'
+ProviderView.displayName = 'ProviderView'
 
-export default ProviderDashboard
+export default ProviderView

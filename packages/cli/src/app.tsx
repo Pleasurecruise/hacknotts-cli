@@ -33,6 +33,7 @@ export const App = () => {
   } = useProviderState(supportedProviders)
 
   const [viewMode, setViewMode] = useState<ViewMode>('chat')
+  const [showProviderDashboard, setShowProviderDashboard] = useState(false)
   const [appState, setAppState] = useState<AppLifecycleState>('startup')
   const [goodbyeMessage, setGoodbyeMessage] = useState('')
   const [ctrlCPressed, setCtrlCPressed] = useState(false)
@@ -80,7 +81,7 @@ export const App = () => {
   const getStatusBarController = useCallback(() => statusBarControllerRef.current ?? undefined, [])
 
   const commandRegistry = useCommandRegistry({
-    onShowProviders: () => setViewMode('providers'),
+    onShowProviders: () => setShowProviderDashboard(true),
     onRequestExit: () => requestExit(),
     onShowGoodbyeMessage: handleGoodbyeMessage,
     getClearHandler,
@@ -124,37 +125,8 @@ export const App = () => {
       setCtrlCPressed(false)
     }
 
-    if (viewMode === 'providers') {
-      if (key.upArrow) {
-        selectPrevious()
-        return
-      }
-
-      if (key.downArrow) {
-        selectNext()
-        return
-      }
-
-      if (key.return && providerConfigs.length > 0) {
-        const targetConfig = providerConfigs[selectedIndex]
-        if (targetConfig && providerSwitcherRef.current?.(targetConfig.providerId)) {
-          setViewMode('chat')
-        }
-        return
-      }
-
-      const normalizedInput = input?.toLowerCase?.() ?? ''
-
-      if (normalizedInput === 'r') {
-        refreshTimestamp()
-        return
-      }
-
-      if (normalizedInput === 'c') {
-        setViewMode('chat')
-        return
-      }
-    }
+    // Provider dashboard input is handled by ProviderDashboard component itself
+    // No need to handle input here anymore
   })
   // 显示启动动画
   if (appState === 'startup') {
@@ -177,20 +149,7 @@ export const App = () => {
     )
   }
 
-  if (viewMode === 'providers') {
-    return (
-      <ProviderDashboard
-        statuses={statuses}
-        selectedIndex={selectedIndex}
-        initializedCount={initializedCount}
-        supportedCount={supportedCount}
-        lastUpdated={lastUpdated}
-        currentProviderId={currentProviderId}
-        robotMascotArt={robotMascot}
-      />
-    )
-  }
-
+  // Always render ChatView, with provider dashboard as overlay
   return (
     <ChatView
       commandRegistry={commandRegistry}
@@ -201,6 +160,21 @@ export const App = () => {
       registerMessagesGetter={registerMessagesGetter}
       registerStatusBarController={registerStatusBarController}
       onLoadingChange={setIsAIResponding}
+      showProviderDashboard={showProviderDashboard}
+      providerStatuses={statuses}
+      selectedProviderIndex={selectedIndex}
+      initializedCount={initializedCount}
+      supportedCount={supportedCount}
+      currentProviderId={currentProviderId}
+      onCloseProviderDashboard={() => setShowProviderDashboard(false)}
+      onSelectPreviousProvider={selectPrevious}
+      onSelectNextProvider={selectNext}
+      onSwitchToProvider={(index) => {
+        const targetConfig = providerConfigs[index]
+        if (targetConfig && providerSwitcherRef.current?.(targetConfig.providerId)) {
+          setShowProviderDashboard(false)
+        }
+      }}
     />
   )
 }

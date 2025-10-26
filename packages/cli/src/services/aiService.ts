@@ -111,12 +111,12 @@ export async function initializeAllProviders(): Promise<AIConfig[]> {
   const allConfigs = getAllAIConfigsFromEnv()
 
   if (allConfigs.length === 0) {
-    console.error('❌ No valid AI provider configuration found in environment variables.')
-    console.error('Please set one of the following in your .env file or system environment:')
-    console.error('  - OPENAI_API_KEY')
-    console.error('  - ANTHROPIC_API_KEY')
-    console.error('  - DEEPSEEK_API_KEY')
-    console.error('  - GOOGLE_API_KEY')
+    // console.error('❌ No valid AI provider configuration found in environment variables.')
+    // console.error('Please set one of the following in your .env file or system environment:')
+    // console.error('  - OPENAI_API_KEY')
+    // console.error('  - ANTHROPIC_API_KEY')
+    // console.error('  - DEEPSEEK_API_KEY')
+    // console.error('  - GOOGLE_API_KEY')
     return []
   }
 
